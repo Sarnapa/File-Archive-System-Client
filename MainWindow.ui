@@ -368,12 +368,14 @@ QProgressBar::chunk
     </property>
     <addaction name="actionConnect"/>
     <addaction name="actionRefresh"/>
+    <addaction name="actionCancel"/>
     <addaction name="actionDisconnect"/>
    </widget>
    <widget class="QMenu" name="menuFiles">
     <property name="title">
      <string>Files</string>
     </property>
+    <addaction name="actionRename"/>
     <addaction name="actionDelete"/>
    </widget>
    <addaction name="mainMenu"/>
@@ -392,6 +394,8 @@ QProgressBar::chunk
    <addaction name="actionConnect"/>
    <addaction name="actionDisconnect"/>
    <addaction name="actionRefresh"/>
+   <addaction name="actionCancel"/>
+   <addaction name="actionRename"/>
    <addaction name="actionDelete"/>
   </widget>
   <widget class="QStatusBar" name="statusBar">

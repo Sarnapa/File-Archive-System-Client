@@ -2,13 +2,14 @@
 
 TCPWorker::TCPWorker(QObject *parent) : QObject(parent)
 {
-    //receivedData = new QByteArray();
-    userFiles = getFilesFromSystem();
+    receivedData = new QByteArray();
+    userFiles = new QList<MyFileInfo>;
+    //userFiles = getFilesFromSystem();
 
 }
 TCPWorker::~TCPWorker()
 {
-    //delete receivedData;
+    delete receivedData;
     delete userFiles;
 }
 
@@ -16,15 +17,31 @@ TCPWorker::~TCPWorker()
 void TCPWorker::connectToSystem(QString login, QString password, QString address)
 {
     // so far
-    actionId = 0;
+    /*actionId = 0;
     if(login == adminLogin && password == adminPassword)
-        isConnected = true;
+        isConnected = true;*/
+    this->login = login;
+    this->password = password;
+    this->address = address;
+    socket = new QTcpSocket;
+
+    connect(socket, SIGNAL(connected()), this, SLOT(connected()));
+    connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
+
+    // this is not blocking call
+    socket->connectToHost(address, 11000);
+
+    if(!socket->waitForConnected(5000))
+    {
+        isConnected = false;
+        emit connectedToSystemSignal(isConnected, userFiles);
+    }
 }
 
 void TCPWorker::disconnect()
 {
     isConnected = false;
-    emit disconnectedSignal();
+    socket->disconnectFromHost();
 }
 
 void TCPWorker::refresh()
@@ -92,6 +109,7 @@ void TCPWorker::downloadFile(QString fileName)
     }
 }
 
+// PAIN
 void TCPWorker::gotResponse()
 {
     switch(actionId)
@@ -108,10 +126,37 @@ void TCPWorker::gotResponse()
         case 3:
             emit gotUploadACKSignal(isConnected, currentFile.getFileName(), currentFile.getFileSize(), currentFile.getFileLastModified());
             break;
-        case 4:
+           case 4:
             emit gotDownloadACKSignal(isConnected, currentFile.getFileName());
             break;
     }
+}
+
+void TCPWorker::gotResponse(QByteArray *data)
+{
+
+}
+
+void TCPWorker::connected()
+{
+    // 80.54.182.42
+    qDebug() << "connected to " + address << " . " + socket->peerAddress().toString();
+    isConnected = true;
+    char secret[] = "zyrafywchodzadoszafy";
+    int secretSize = sizeof(secret)/sizeof(char);
+    Command command("0x01", secretSize, secret);
+    socket->write(command.getCode());
+    socket->write(command.getSize());
+    socket->write(command.getData());
+    //emit connectedToSystemSignal(isConnected, userFiles);
+}
+
+void TCPWorker::disconnected()
+{
+    qDebug() << "disconnected";
+    socket->close();
+    isConnected = false;
+    emit disconnectedSignal();
 }
 
 QList<MyFileInfo>* TCPWorker::getFilesFromSystem() const

@@ -54,6 +54,8 @@ private slots:
     void gotUploadACK(bool connected, int progressBarValue);
     void downloadFile();
     void gotDownloadACK(bool connected, int progressBarValue, QString fileName);
+
+    void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // MAINWINDOW_H

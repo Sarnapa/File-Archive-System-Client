@@ -278,7 +278,7 @@ void RemoteListModel::connectToSystem(QString &login, QString &password, QString
     this->login = login;
     this->passwd = password;
     this->address = address;
-    timer->start(3000);
+    //timer->start(3000);
     worker->connectToSystem(login, password, address);
 }
 

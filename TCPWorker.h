@@ -8,7 +8,11 @@
 #include <QByteArray>
 #include <QDir>
 #include <QFile>
+#include <QTcpSocket>
+#include <QHostAddress>
+#include "Command.h"
 #include "MyFileInfo.h"
+
 
 class TCPWorker : public QObject
 {
@@ -33,7 +37,9 @@ signals:
     // for PAIN
     void onTimeout();
 private:
-    //QByteArray *receivedData;
+    QByteArray *receivedData;
+    QTcpSocket *socket;
+    QString login, password , address;
     //for PAIN
     int actionId;
     bool isConnected = false;
@@ -46,7 +52,9 @@ private:
     MyFileInfo currentFile;
     QList<MyFileInfo>* getFilesFromSystem() const;
 private slots:
-    //void gotResponse(QByteArray *data);
+    void connected();
+    void disconnected();
+    void gotResponse(QByteArray *data);
     void gotResponse();
 };
 

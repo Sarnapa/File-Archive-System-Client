@@ -212,3 +212,12 @@ void MainWindow::gotDownloadACK(bool connected, int progressBarValue, QString fi
         actionStatus = false;
     emit progressBarValueChanged(progressBarValue);
 }
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if(connectionStatus)
+    {
+        qDebug() << "Catch close application event.";
+        remoteModel->disconnect();
+    }
+}
