@@ -45,7 +45,12 @@ void MainWindow::updateWindow()
         ui->statusBar->addPermanentWidget(statusLabel);
     }
     else
-        ui->statusBar->removeWidget(statusLabel);
+    {
+        if(statusLabel != nullptr)
+        {
+            ui->statusBar->removeWidget(statusLabel);
+        }
+    }
     ui->progressBar->setValue(0);
     ui->remoteView->repaint();
 }

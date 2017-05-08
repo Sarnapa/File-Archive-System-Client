@@ -6,9 +6,9 @@ RemoteListModel::RemoteListModel(QObject *parent)
     iconProvider = new QFileIconProvider();
     filesList = new QList<MyFileInfo>();
     worker = new TCPWorker;
-    workerThread = new QThread;
-    worker->moveToThread(workerThread);
-    workerThread->start();
+    //workerThread = new QThread;
+    //worker->moveToThread(workerThread);
+    //workerThread->start();
     timer = new QTimer();
     timer->setSingleShot(true);
     connect(worker, SIGNAL(connectedToSystemSignal(bool,QList<MyFileInfo>*)), this, SLOT(connectedToSystem(bool,QList<MyFileInfo>*)));
@@ -316,7 +316,6 @@ void RemoteListModel::downloadFile(QString fileName)
 
 void RemoteListModel::connectedToSystem(bool connected, QList<MyFileInfo>* userFiles)
 {
-    //qDebug()<<"connectedToSystem in RemoteListModel: "<<QThread::currentThreadId();
     isConnected = connected;
     if(isConnected)
         insertRows(userFiles, userFiles->size());

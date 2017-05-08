@@ -1,6 +1,10 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include <QDebug>
+#include <QByteArray>
+#include "iostream"
+
 /*
 INTRODUCE = 0x01,
 LOGIN = 0x02,
@@ -23,71 +27,61 @@ class Command
 {
 public:
     Command()
+    {}
+
+    Command(qint8 code, qint32 sizeInt, std::string data)
     {
-        size = new char;
-        data = new char;
+        this->code = intToArray(code);
+        this->size = intToArray(sizeInt);
+        /*for(unsigned int i = 0; i < 4; ++i)
+        {
+            this->size[i] = (sizeInt >> 8 * (3 - i)) & 0xFF;
+        }*/
+        this->data = QByteArray(data.c_str());
     }
 
-    Command(const char *code, int sizeInt, const char *data)
-    {
-        this->code = code;
-        this->sizeInt = sizeInt;
-        std::string sizeString = std::to_string(sizeInt);
-        size = sizeString.c_str();
-        this->data = data;
-    }
-
-    Command(const char *code,const char *size,const char *data)
-    {
-        this->code = code;
-        this->size = size;
-        sizeInt = atoi(size);
-        this->data = data;
-    }
-
-    const char* getCode()
+    QByteArray getCode()
     {
         return code;
     }
 
-    void setCode(const char *code)
-    {
-        this->code = code;
-    }
-
-    const char* getSize()
+    QByteArray getSize()
     {
         return size;
     }
 
-    void setSize(const char* size)
-    {
-        this->size = size;
-        sizeInt = atoi(size);
-    }
-
-    void setSize(int sizeInt)
-    {
-        this->sizeInt = sizeInt;
-        std::string sizeString = std::to_string(sizeInt);
-        size = sizeString.c_str();
-    }
-
-    const char* getData()
+    QByteArray getData()
     {
         return data;
     }
 
-    void setData(const char* data)
+    static QByteArray intToArray(qint8 source)
     {
-        this->data = data;
+        QByteArray temp;
+        QDataStream data(&temp, QIODevice::ReadWrite);
+        data << source;
+        return temp;
+    }
+
+    static QByteArray intToArray(qint32 source)
+    {
+        QByteArray temp;
+        QDataStream data(&temp, QIODevice::ReadWrite);
+        data << source;
+        return temp;
+    }
+
+    QByteArray getReversedSize()
+    {
+        QByteArray reversedSize = size;
+        std::reverse(reversedSize.begin(), reversedSize.end());
+        return reversedSize;
     }
 
 private:
-    const char *code;
-    int sizeInt;
-    const char *size;
-    const char *data;
+    QByteArray code;
+    QByteArray size;
+    QByteArray data;
 };
 
 #endif // COMMAND_H

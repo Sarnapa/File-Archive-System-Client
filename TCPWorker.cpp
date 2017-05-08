@@ -9,27 +9,26 @@ TCPWorker::TCPWorker(QObject *parent) : QObject(parent)
 }
 TCPWorker::~TCPWorker()
 {
-    delete receivedData;
     delete userFiles;
+    delete receivedData;
 }
 
 
+
+//TIN
 void TCPWorker::connectToSystem(QString login, QString password, QString address)
 {
-    // so far
-    /*actionId = 0;
-    if(login == adminLogin && password == adminPassword)
-        isConnected = true;*/
     this->login = login;
     this->password = password;
     this->address = address;
-    socket = new QTcpSocket;
+    socket = new QTcpSocket();
 
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
+    connect(socket, SIGNAL(readyRead()), this, SLOT(gotResp()));
 
     // this is not blocking call
-    socket->connectToHost(address, 11000);
+    socket->connectToHost(address, 11000); //11000 2666
 
     if(!socket->waitForConnected(5000))
     {
@@ -38,6 +37,7 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     }
 }
 
+//TIN
 void TCPWorker::disconnect()
 {
     isConnected = false;
@@ -132,25 +132,59 @@ void TCPWorker::gotResponse()
     }
 }
 
-void TCPWorker::gotResponse(QByteArray *data)
+//TIN
+void TCPWorker::gotResp()
 {
+    qDebug() << "Something received";
 
+    char ch;
+
+    socket->read(&ch, sizeof(ch));
+
+    std::string chString = ch + "\0";
+    qDebug() << chString.c_str();
+
+    int chInt = ch;
+    switch(chInt)
+    {
+        case 8:
+            if(!isConnected)
+            {
+                qDebug() << "got accept";
+                qint8 code = 2;
+                std::string tmpLogin = "user1:pass1";
+                qint32 size = tmpLogin.size();
+                Command command(code, size, tmpLogin);
+                socket->write(command.getCode());
+                socket->write(command.getSize());
+                socket->write(command.getData());
+                socket->flush();
+             }
+            break;
+        case 69:
+            qDebug() << "got 0x69";
+            isConnected = true;
+            emit connectedToSystemSignal(isConnected, userFiles);
+        default:
+            break;
+    }
 }
 
+//TIN
 void TCPWorker::connected()
 {
-    // 80.54.182.42
     qDebug() << "connected to " + address << " . " + socket->peerAddress().toString();
-    isConnected = true;
-    char secret[] = "zyrafywchodzadoszafy";
-    int secretSize = sizeof(secret)/sizeof(char);
-    Command command("0x01", secretSize, secret);
+    std::string secret = "zyrafywchodzadoszafy";
+    qint8 code = 1;
+    qint32 secretSize = secret.size();
+    Command command(code, secretSize, secret);
     socket->write(command.getCode());
     socket->write(command.getSize());
     socket->write(command.getData());
-    //emit connectedToSystemSignal(isConnected, userFiles);
+    socket->flush();
 }
 
+//TIN
 void TCPWorker::disconnected()
 {
     qDebug() << "disconnected";

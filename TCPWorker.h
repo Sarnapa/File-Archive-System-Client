@@ -10,6 +10,9 @@
 #include <QFile>
 #include <QTcpSocket>
 #include <QHostAddress>
+#include <algorithm>
+#include <QDataStream>
+#include <stdio.h>
 #include "Command.h"
 #include "MyFileInfo.h"
 
@@ -54,7 +57,8 @@ private:
 private slots:
     void connected();
     void disconnected();
-    void gotResponse(QByteArray *data);
+    void gotResp();
+    // PAIN
     void gotResponse();
 };
 
