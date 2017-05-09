@@ -289,7 +289,7 @@ void RemoteListModel::disconnect()
 
 void RemoteListModel::refresh()
 {
-    timer->start(3000);
+    //timer->start(3000);
     worker->refresh();
 }
 

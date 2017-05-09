@@ -29,7 +29,12 @@ public:
     Command()
     {}
 
-    Command(qint8 code, qint32 sizeInt, std::string data)
+    Command(quint8 code)
+    {
+        this->code = intToArray(code);
+    }
+
+    Command(quint8 code, quint32 sizeInt, std::string data)
     {
         this->code = intToArray(code);
         this->size = intToArray(sizeInt);
@@ -55,7 +60,7 @@ public:
         return data;
     }
 
-    static QByteArray intToArray(qint8 source)
+    static QByteArray intToArray(quint8 source)
     {
         QByteArray temp;
         QDataStream data(&temp, QIODevice::ReadWrite);
@@ -63,7 +68,7 @@ public:
         return temp;
     }
 
-    static QByteArray intToArray(qint32 source)
+    static QByteArray intToArray(quint32 source)
     {
         QByteArray temp;
         QDataStream data(&temp, QIODevice::ReadWrite);

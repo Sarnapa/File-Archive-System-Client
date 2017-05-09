@@ -48,6 +48,25 @@ void TCPWorker::refresh()
 {
     // so far
     actionId = 1;
+    quint8 number;
+    Command command(number);
+    for(unsigned int i = 0; i < 10; ++i)
+    {
+        number = 1;
+        qDebug() << command.getCode().toInt();
+        socket->write(command.getCode());
+        //socket->waitForBytesWritten(1000);
+        //socket->flush();
+        qDebug() << "po petli numer: " << i;
+    }
+    qDebug() << "po wszytkich petlach";
+    number = 255;
+    Command lastCommand(number);
+    socket->write(lastCommand.getCode());
+    //socket->waitForBytesWritten(1000);
+    //socket->flush();
+    qDebug() << "po koncowym 255";
+    gotResponse(); // tylko dla interfejsu - malo wazne
 }
 
 void TCPWorker::deleteFile(QString fileName)
@@ -141,8 +160,8 @@ void TCPWorker::gotResp()
 
     socket->read(&ch, sizeof(ch));
 
-    std::string chString = ch + "\0";
-    qDebug() << chString.c_str();
+    //std::string chString = ch + "\0";
+    //qDebug() << chString.c_str();
 
     int chInt = ch;
     switch(chInt)
@@ -151,9 +170,9 @@ void TCPWorker::gotResp()
             if(!isConnected)
             {
                 qDebug() << "got accept";
-                qint8 code = 2;
+                quint8 code = 2;
                 std::string tmpLogin = "user1:pass1";
-                qint32 size = tmpLogin.size();
+                quint32 size = tmpLogin.size();
                 Command command(code, size, tmpLogin);
                 socket->write(command.getCode());
                 socket->write(command.getSize());
@@ -188,6 +207,7 @@ void TCPWorker::connected()
 void TCPWorker::disconnected()
 {
     qDebug() << "disconnected";
+    if(socket->ConnectedState )
     socket->close();
     isConnected = false;
     emit disconnectedSignal();
