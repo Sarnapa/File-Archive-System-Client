@@ -72,8 +72,10 @@ void MainWindow::on_actionRefresh_triggered()
 {
     if(!actionStatus)
     {
+        //so far - for tests
+        actionStatus = true;
         ui->progressBar->setValue(0);
-        setEnabled(false);
+        //setEnabled(false);
         remoteModel->refresh();
     }
 }
@@ -98,12 +100,14 @@ void MainWindow::on_actionDelete_triggered()
 
 void MainWindow::on_actionCancel_triggered()
 {
-    //not implemented
+    if(actionStatus)
+    {
+        remoteModel->cancel();
+    }
 }
 
 void MainWindow::connectToSystem(QString &login, QString &password, QString &address)
 {
-    //qDebug()<<"liczba wierszy w modelu: "<<QThread::currentThreadId() << " " << remoteModel->rowCount();
     remoteModel->connectToSystem(login, password, address);
 }
 
@@ -118,25 +122,34 @@ void MainWindow::connectedToSystem(bool connected)
     else
     {
         logForm->setEnabled(true);
-        QMessageBox::warning(logForm, "Logging Error", "Login and/or password wrong.");
+        QMessageBox::warning(logForm, "No connection", "Cannot connect to archive system.");
     }
 }
 
 void MainWindow::disconnected()
 {
-    connectionStatus = false;
-    updateWindow();
+    if(connectionStatus)
+    {
+        connectionStatus = false;
+        updateWindow();
+    }
+    else
+    {
+        logForm->setEnabled(true);
+        QMessageBox::warning(logForm, "Logging Error", "Login and/or password wrong.");
+    }
 }
 
 void MainWindow::refreshed(bool connected)
 {
+    actionStatus = false;
     connectionStatus = connected;
     if(connectionStatus == false)
     {
         QMessageBox::warning(this, "Error", "Lost connection to system.");
         updateWindow();
     }
-    setEnabled(true);
+    //setEnabled(true);
 }
 
 void MainWindow::deletedFile(bool connected)

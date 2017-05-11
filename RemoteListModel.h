@@ -4,6 +4,8 @@
 #include <QAbstractListModel>
 #include <QFileIconProvider>
 #include <QTimer>
+#include <QFuture>
+#include <QtConcurrent/QtConcurrent>
 #include "TCPWorker.h"
 
 #define COLUMNS_COUNT 3
@@ -62,6 +64,7 @@ public:
     void disconnect();
     void refresh();
     void deleteFile(int row);
+    void cancel();
     void uploadFile(QString fileName, qlonglong size, QDateTime lastModified);
     void downloadFile(QString fileName);
 
@@ -72,6 +75,8 @@ public:
     }
 
 signals:
+    void connectToSystemSignal(QString login, QString password, QString address);
+
     void connectedToSystemSignal(bool connected);
     void disconnectedSignal();
     void refreshedSignal(bool connected);
@@ -85,7 +90,6 @@ private:
     QString passwd = "";
     QString address = "";
     bool isConnected = false;
-    QThread *workerThread;
     TCPWorker *worker;
     //for PAIN
     QTimer *timer;

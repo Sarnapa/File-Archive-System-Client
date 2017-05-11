@@ -12,6 +12,7 @@
 #include <QHostAddress>
 #include <algorithm>
 #include <QDataStream>
+#include <QtEndian>
 #include <stdio.h>
 #include "Command.h"
 #include "MyFileInfo.h"
@@ -28,8 +29,12 @@ public:
     void disconnect();
     void refresh();
     void deleteFile(QString fileName);
+    void cancel();
     void uploadFile(QString fileName, qlonglong size, QDateTime lastModified);
     void downloadFile(QString fileName);
+
+protected:
+    void run();
 signals:
     void connectedToSystemSignal(bool connected, QList<MyFileInfo> *userFiles);
     void disconnectedSignal();
@@ -42,8 +47,10 @@ signals:
 private:
     QByteArray *receivedData;
     QTcpSocket *socket;
-    QString login, password , address;
+    QString login, password;
+    bool stop = false;
     //for PAIN
+    QString address;
     int actionId;
     bool isConnected = false;
     const QString adminLogin = "admin";

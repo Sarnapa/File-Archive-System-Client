@@ -3,6 +3,7 @@
 
 #include <QDebug>
 #include <QByteArray>
+#include <QString>
 #include "iostream"
 
 /*
@@ -34,7 +35,7 @@ public:
         this->code = intToArray(code);
     }
 
-    Command(quint8 code, quint32 sizeInt, std::string data)
+    Command(quint8 code, quint32 sizeInt, QString data)
     {
         this->code = intToArray(code);
         this->size = intToArray(sizeInt);
@@ -42,7 +43,7 @@ public:
         {
             this->size[i] = (sizeInt >> 8 * (3 - i)) & 0xFF;
         }*/
-        this->data = QByteArray(data.c_str());
+        this->data = data.toLocal8Bit();
     }
 
     QByteArray getCode()

@@ -1,6 +1,6 @@
 #include "TCPWorker.h"
 
-TCPWorker::TCPWorker(QObject *parent) : QObject(parent)
+    TCPWorker::TCPWorker(QObject *parent) : QObject(parent)
 {
     receivedData = new QByteArray();
     userFiles = new QList<MyFileInfo>;
@@ -13,14 +13,11 @@ TCPWorker::~TCPWorker()
     delete receivedData;
 }
 
-
-
 //TIN
 void TCPWorker::connectToSystem(QString login, QString password, QString address)
 {
     this->login = login;
     this->password = password;
-    this->address = address;
     socket = new QTcpSocket();
 
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
@@ -31,44 +28,31 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     socket->connectToHost(address, 11000); //11000 2666
 
     if(!socket->waitForConnected(5000))
-    {
-        isConnected = false;
         emit connectedToSystemSignal(isConnected, userFiles);
-    }
 }
 
 //TIN
 void TCPWorker::disconnect()
 {
-    isConnected = false;
     socket->disconnectFromHost();
 }
 
+//TIN
 void TCPWorker::refresh()
 {
     // so far
-    actionId = 1;
-    quint8 number;
-    Command command(number);
-    for(unsigned int i = 0; i < 10; ++i)
+    Command command(44);
+    while(!stop)
     {
-        number = 1;
-        qDebug() << command.getCode().toInt();
         socket->write(command.getCode());
-        //socket->waitForBytesWritten(1000);
-        //socket->flush();
-        qDebug() << "po petli numer: " << i;
+        socket->flush();
     }
-    qDebug() << "po wszytkich petlach";
-    number = 255;
-    Command lastCommand(number);
-    socket->write(lastCommand.getCode());
-    //socket->waitForBytesWritten(1000);
-    //socket->flush();
-    qDebug() << "po koncowym 255";
-    gotResponse(); // tylko dla interfejsu - malo wazne
+    qDebug() << "Po przesyłaniu";
+    stop = false;
+    emit refreshedSignal(isConnected, userFiles);
 }
 
+//PAIN
 void TCPWorker::deleteFile(QString fileName)
 {
     actionId = 2;
@@ -88,6 +72,12 @@ void TCPWorker::deleteFile(QString fileName)
     }
 }
 
+void TCPWorker::cancel()
+{
+    stop = true;
+}
+
+//PAIN
 void TCPWorker::uploadFile(QString fileName, qlonglong size, QDateTime lastModified)
 {
     actionId = 3;
@@ -110,6 +100,7 @@ void TCPWorker::uploadFile(QString fileName, qlonglong size, QDateTime lastModif
     }
 }
 
+//PAIN
 void TCPWorker::downloadFile(QString fileName)
 {
     actionId = 4;
@@ -157,7 +148,6 @@ void TCPWorker::gotResp()
     qDebug() << "Something received";
 
     char ch;
-
     socket->read(&ch, sizeof(ch));
 
     //std::string chString = ch + "\0";
@@ -169,19 +159,24 @@ void TCPWorker::gotResp()
         case 8:
             if(!isConnected)
             {
-                qDebug() << "got accept";
+                qDebug() << "Got accept";
                 quint8 code = 2;
-                std::string tmpLogin = "user1:pass1";
-                quint32 size = tmpLogin.size();
-                Command command(code, size, tmpLogin);
-                socket->write(command.getCode());
-                socket->write(command.getSize());
-                socket->write(command.getData());
-                socket->flush();
+                QString loginDataString = login + ":" + password;
+                quint32 size = loginDataString.size();
+                Command command(code, size, loginDataString);
+                if(socket->state() == QAbstractSocket::ConnectedState)
+                {
+                    socket->write(command.getCode());
+                    socket->flush();
+                    socket->write(command.getSize());
+                    socket->flush();
+                    socket->write(command.getData());
+                    socket->flush();
+                }
              }
             break;
         case 69:
-            qDebug() << "got 0x69";
+            qDebug() << "Got 0x69 - logging ACK";
             isConnected = true;
             emit connectedToSystemSignal(isConnected, userFiles);
         default:
@@ -192,27 +187,34 @@ void TCPWorker::gotResp()
 //TIN
 void TCPWorker::connected()
 {
-    qDebug() << "connected to " + address << " . " + socket->peerAddress().toString();
-    std::string secret = "zyrafywchodzadoszafy";
-    qint8 code = 1;
-    qint32 secretSize = secret.size();
+    qDebug() << "Connected to " << socket->peerAddress().toString();
+    QString secret = "zyrafywchodzadoszafy";
+    quint8 code = 1;
+    quint32 secretSize = secret.size();
     Command command(code, secretSize, secret);
-    socket->write(command.getCode());
-    socket->write(command.getSize());
-    socket->write(command.getData());
-    socket->flush();
+    if(socket->state() == QAbstractSocket::ConnectedState)
+    {
+        //flush writes as much as possible from the internal write buffer to the underlying network socket, without blocking.
+        socket->write(command.getCode());
+        socket->flush();
+        socket->write(command.getSize());
+        socket->flush();
+        socket->write(command.getData());
+        socket->flush();
+    }
 }
 
 //TIN
 void TCPWorker::disconnected()
 {
-    qDebug() << "disconnected";
-    if(socket->ConnectedState )
+    qDebug() << "Disconnected";
     socket->close();
     isConnected = false;
     emit disconnectedSignal();
 }
 
+
+//PAIN
 QList<MyFileInfo>* TCPWorker::getFilesFromSystem() const
 {
     QList<MyFileInfo>* list = new QList<MyFileInfo>();
