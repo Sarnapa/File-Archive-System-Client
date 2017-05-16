@@ -3,8 +3,6 @@
 
 #include <QAbstractListModel>
 #include <QFileIconProvider>
-#include <QFuture>
-#include <QtConcurrent/QtConcurrent>
 #include "TCPWorker.h"
 #include "TCPThread.h"
 

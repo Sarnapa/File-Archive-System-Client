@@ -10,6 +10,7 @@ Command::~Command()
 
 }
 
+
 // to send
 Command::Command(CMD code, QObject *parent) : QObject(parent)
 {
@@ -22,6 +23,17 @@ Command::Command(CMD code, QString data, QObject *parent) : QObject(parent)
     this->code = intToArray((quint8)code);
     this->size = intToArray((quint32)data.length());
     this->data = data.toLocal8Bit();
+}
+
+Command& Command::operator=(const Command &cmd)
+{
+    this->code = cmd.code;
+    this->codeInt = cmd.codeInt;
+    this->size = cmd.size;
+    this->sizeInt = cmd.sizeInt;
+    this->data = cmd.data;
+    this->dataString = cmd.dataString;
+    return *this;
 }
 
 CMD Command::getCodeInt()
@@ -37,6 +49,21 @@ quint32 Command::getSizeInt()
 QString Command::getDataString()
 {
     return dataString;
+}
+
+QByteArray Command::getCode()
+{
+    return code;
+}
+
+QByteArray Command::getSize()
+{
+    return size;
+}
+
+QByteArray Command::getData()
+{
+    return data;
 }
 
 STATE Command::getState()

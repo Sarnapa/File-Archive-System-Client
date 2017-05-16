@@ -17,8 +17,8 @@ RemoteListModel::RemoteListModel(QObject *parent)
 
     connect(this, SIGNAL(connectToSystemSignal(QString,QString,QString)), worker, SLOT(connectToSystem(QString,QString,QString)));
     connect(this, SIGNAL(disconnectSignal()), worker, SLOT(disconnect()));
+    connect(this, SIGNAL(cancelSignal()), worker, SLOT(cancel()), Qt::ConnectionType::DirectConnection);
     connect(this, SIGNAL(refreshSignal()), worker, SLOT(refresh()));
-    connect(this, SIGNAL(cancelSignal()), worker, SLOT(cancel()));
     connect(this, SIGNAL(deleteFileSignal(QString)), worker, SLOT(deleteFile(QString)));
     connect(this, SIGNAL(uploadFileSignal(QString,qlonglong,QDateTime)), worker, SLOT(uploadFile(QString,qlonglong,QDateTime)));
     connect(this, SIGNAL(downloadFileSignal(QString)), worker, SLOT(downloadFile(QString)));
@@ -294,7 +294,6 @@ void RemoteListModel::disconnect()
 
 void RemoteListModel::refresh()
 {
-    //QFuture<void> future = QtConcurrent::run(worker, &TCPWorker::refresh);
     //worker->refresh();
     emit refreshSignal();
 }

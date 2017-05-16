@@ -58,12 +58,16 @@ public:
     explicit Command(CMD code, QString data, QObject *parent = 0);
      ~Command();
 
+    Command& operator=(const Command& cmd);
+
     CMD getCodeInt();
     quint32 getSizeInt();
     QString getDataString();
+    QByteArray getCode();
+    QByteArray getSize();
+    QByteArray getData();
     STATE getState();
 
-public slots:
     void getCmdCode(QTcpSocket *socket, QDataStream &socketStream);
     void getCmdSize(QTcpSocket *socket, QDataStream &socketStream);
     void getCmdData(QTcpSocket *socket, QDataStream &socketStream);
@@ -72,9 +76,6 @@ public slots:
     bool sendCmdCode(QTcpSocket *socket);
     bool sendCmdSize(QTcpSocket *socket);
     bool sendCmdData(QTcpSocket *socket);
-
-signals:
-    void sendCmdSignal(QTcpSocket *socket);
 
 private:
     //To receive

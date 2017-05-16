@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <QDateTime>
 #include "Command.h"
-//#include "TCPThread.h"
 
 enum STATUS
 {
@@ -46,18 +45,16 @@ signals:
     void deletedFileSignal(bool connected, QString fileName);
     void gotUploadACKSignal(bool connected, QString fileName, qlonglong size, QDateTime lastModified);
     void gotDownloadACKSignal(bool connected, QString fileName);
-
-    void sendCmdSignal(QTcpSocket *socket);
 private:
     QTcpSocket *socket;
     QDataStream socketStream;
-    //TCPThread *workerThread;
     QString login, password;
-    bool stop = false;
+    bool isStopped = false;
     STATUS currentStatus = DISCONNECTED;
     QList<QFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
+    void sendCmd(CMD code, QString data);
 private slots:
     void connected();
     void disconnected();
