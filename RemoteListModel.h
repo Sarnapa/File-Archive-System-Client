@@ -3,10 +3,10 @@
 
 #include <QAbstractListModel>
 #include <QFileIconProvider>
-#include <QTimer>
 #include <QFuture>
 #include <QtConcurrent/QtConcurrent>
 #include "TCPWorker.h"
+#include "TCPThread.h"
 
 #define COLUMNS_COUNT 3
 
@@ -40,7 +40,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     // Add data:
-    bool insertRows(QList<MyFileInfo> *newFiles, int count);
+    bool insertRows(QList<QFileInfo> *newFiles, int count);
 
     // Remove data:
     bool removeRow(QString fileName);
@@ -68,14 +68,14 @@ public:
     void uploadFile(QString fileName, qlonglong size, QDateTime lastModified);
     void downloadFile(QString fileName);
 
-    //for PAIN
-    int getFilePartNumber()
-    {
-        return filePartNumber;
-    }
-
 signals:
     void connectToSystemSignal(QString login, QString password, QString address);
+    void disconnectSignal();
+    void refreshSignal();
+    void deleteFileSignal(QString fileName);
+    void cancelSignal();
+    void uploadFileSignal(QString fileName, qlonglong size, QDateTime lastModified);
+    void downloadFileSignal(QString fileName);
 
     void connectedToSystemSignal(bool connected);
     void disconnectedSignal();
@@ -84,16 +84,14 @@ signals:
     void gotUploadACKSignal(bool connected, int progressBarValue);
     void gotDownloadACKSignal(bool connected, int progressBarValue, QString fileName);
 private:
-    QList<MyFileInfo> *filesList;
+    QList<QFileInfo> *filesList;
     QFileIconProvider *iconProvider;
     QString login = "";
     QString passwd = "";
     QString address = "";
     bool isConnected = false;
+    TCPThread *workerThread;
     TCPWorker *worker;
-    //for PAIN
-    QTimer *timer;
-    int filePartNumber = 0;
 
     int findFile(QString fileName) const;
     inline void clearUserData()
@@ -104,9 +102,9 @@ private:
     }
 
 private slots:
-    void connectedToSystem(bool connected, QList<MyFileInfo> *userFiles);
+    void connectedToSystem(bool connected, QList<QFileInfo> *userFiles);
     void disconnected();
-    void refreshed(bool connected, QList<MyFileInfo> *userList);
+    void refreshed(bool connected, QList<QFileInfo> *userList);
     void deletedFile(bool connected, QString fileName);
     void gotUploadACK(bool connected, QString fileName, qlonglong size, QDateTime lastModified);
     void gotDownloadACK(bool connected, QString fileName);

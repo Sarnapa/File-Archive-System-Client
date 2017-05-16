@@ -1,22 +1,27 @@
 #ifndef TCPWORKER_H
 #define TCPWORKER_H
 
-#include <QObject>
-#include <QThread>
-#include <QDebug>
 #include <QList>
-#include <QByteArray>
 #include <QDir>
 #include <QFile>
-#include <QTcpSocket>
+#include <QFileInfo>
 #include <QHostAddress>
 #include <algorithm>
-#include <QDataStream>
-#include <QtEndian>
-#include <stdio.h>
+#include <QDateTime>
 #include "Command.h"
-#include "MyFileInfo.h"
+//#include "TCPThread.h"
 
+enum STATUS
+{
+    DISCONNECTED = 0,
+    CONNECTED = 1,
+    LOGGED = 2,
+    REFRESH_ACTION = 3,
+    RENAME_ACTION = 4,
+    DELETE_FILE_ACTION = 5,
+    UPLOAD_FILE_ACTION = 6,
+    DOWNLOAD_FILE_ACTION = 7
+};
 
 class TCPWorker : public QObject
 {
@@ -25,48 +30,39 @@ public:
     explicit TCPWorker(QObject *parent = 0);
     ~TCPWorker();
 
+public slots:
     void connectToSystem(QString login, QString password, QString address);
     void disconnect();
+    void cancel();
     void refresh();
     void deleteFile(QString fileName);
-    void cancel();
     void uploadFile(QString fileName, qlonglong size, QDateTime lastModified);
     void downloadFile(QString fileName);
 
-protected:
-    void run();
 signals:
-    void connectedToSystemSignal(bool connected, QList<MyFileInfo> *userFiles);
+    void connectedToSystemSignal(bool connected, QList<QFileInfo> *userFiles);
     void disconnectedSignal();
-    void refreshedSignal(bool connected, QList<MyFileInfo> *userFiles);
+    void refreshedSignal(bool connected, QList<QFileInfo> *userFiles);
     void deletedFileSignal(bool connected, QString fileName);
     void gotUploadACKSignal(bool connected, QString fileName, qlonglong size, QDateTime lastModified);
     void gotDownloadACKSignal(bool connected, QString fileName);
-    // for PAIN
-    void onTimeout();
+
+    void sendCmdSignal(QTcpSocket *socket);
 private:
-    QByteArray *receivedData;
     QTcpSocket *socket;
+    QDataStream socketStream;
+    //TCPThread *workerThread;
     QString login, password;
     bool stop = false;
-    //for PAIN
-    QString address;
-    int actionId;
-    bool isConnected = false;
-    const QString adminLogin = "admin";
-    const QString adminPassword = "admin";
-    QList<MyFileInfo> *userFiles;
-    //for deleting file
-    QString currentFileName;
-    //for updating/downloading file
-    MyFileInfo currentFile;
-    QList<MyFileInfo>* getFilesFromSystem() const;
+    STATUS currentStatus = DISCONNECTED;
+    QList<QFileInfo> *userFiles;
+
+    inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
 private slots:
     void connected();
     void disconnected();
+    //void gotError(QAbstractSocket::SocketError error);
     void gotResp();
-    // PAIN
-    void gotResponse();
 };
 
 #endif // TCPWORKER_H

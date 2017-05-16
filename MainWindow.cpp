@@ -167,7 +167,7 @@ void MainWindow::uploadFile()
 {
     if(!actionStatus)
     {
-        ui->progressBar->setValue(0);
+        /*ui->progressBar->setValue(0);
         QModelIndex idx = ui->localView->currentIndex();
         if(idx.isValid())
         {
@@ -177,7 +177,7 @@ void MainWindow::uploadFile()
                 actionStatus = true;
                 remoteModel->uploadFile(fileInfo.fileName(), fileInfo.size(), fileInfo.lastModified());
             }
-        }
+        }*/
     }
 }
 
@@ -198,13 +198,13 @@ void MainWindow::downloadFile()
 {
     if(!actionStatus)
     {
-        ui->progressBar->setValue(0);
+        /*ui->progressBar->setValue(0);
         QModelIndex idx = ui->remoteView->currentIndex();
         if(idx.isValid())
         {
             actionStatus = true;
             remoteModel->downloadFile(remoteModel->fileName(idx));
-        }
+        }*/
     }
 }
 
@@ -219,12 +219,12 @@ void MainWindow::gotDownloadACK(bool connected, int progressBarValue, QString fi
     if(progressBarValue == 100)
     {
         actionStatus = false;
-        QFile newFile(path + fileName);
+        /*QFile newFile(path + fileName);
         if(newFile.open(QIODevice::ReadWrite))
         {
             newFile.write("Test");
         }
-        newFile.close();
+        newFile.close();*/
     }
     else if(progressBarValue == 0)
         actionStatus = false;
