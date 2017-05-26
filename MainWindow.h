@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 #include <QFileSystemModel>
-#include <QFileInfo>
 #include <QMessageBox>
 #include <QLabel>
 #include "LoggingForm.h"

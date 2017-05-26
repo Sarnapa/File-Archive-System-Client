@@ -20,7 +20,7 @@ RemoteListModel::RemoteListModel(QObject *parent)
     connect(this, SIGNAL(cancelSignal()), worker, SLOT(cancel()), Qt::ConnectionType::DirectConnection);
     connect(this, SIGNAL(refreshSignal()), worker, SLOT(refresh()));
     connect(this, SIGNAL(deleteFileSignal(QString)), worker, SLOT(deleteFile(QString)));
-    connect(this, SIGNAL(uploadFileSignal(QString,qlonglong,QDateTime)), worker, SLOT(uploadFile(QString,qlonglong,QDateTime)));
+    connect(this, SIGNAL(uploadFileSignal(QFileInfo)), worker, SLOT(uploadFile(QFileInfo)));
     connect(this, SIGNAL(downloadFileSignal(QString)), worker, SLOT(downloadFile(QString)));
 }
 
@@ -311,10 +311,10 @@ void RemoteListModel::cancel()
     emit cancelSignal();
 }
 
-void RemoteListModel::uploadFile(QString fileName, qlonglong size, QDateTime lastModified)
+void RemoteListModel::uploadFile(QFileInfo fileInfo)
 {
     //worker->uploadFile(fileName, size, lastModified);
-    emit uploadFileSignal(fileName, size, lastModified);
+    emit uploadFileSignal(fileInfo);
 }
 
 void RemoteListModel::downloadFile(QString fileName)

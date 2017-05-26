@@ -20,10 +20,11 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     socket->setParent(0);
     socketStream.setDevice(socket);
     socketStream.setVersion(QDataStream::Qt_5_9);
+    transportLayer = new TransportLayer(socket, this);
 
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
-    //connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(gotError(QAbstractSocket::SocketError)));
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(gotError(QAbstractSocket::SocketError)), Qt::ConnectionType::DirectConnection);
     connect(socket, SIGNAL(readyRead()), this, SLOT(gotResp()));
 
     //to abort previous connection. On an unconnected socket, this function does nothing.
@@ -42,20 +43,6 @@ void TCPWorker::disconnect()
 
 void TCPWorker::refresh()
 {
-    while(!isStopped)
-    {
-        if(!isConnected())
-        {
-            isStopped = true;
-            return;
-        }
-        else
-        {
-            sendCmd(TEST1, NULL);
-        }
-    }
-    isStopped = false;
-    sendCmd(TEST2, NULL);
     emit refreshedSignal(isConnected(), userFiles);
 }
 
@@ -70,8 +57,25 @@ void TCPWorker::cancel()
     isStopped = true;
 }
 
-void TCPWorker::uploadFile(QString fileName, qlonglong size, QDateTime lastModified)
+void TCPWorker::uploadFile(QFileInfo fileInfo)//(QString fileName, qlonglong size, QDateTime lastModified)
 {
+    /*FileService fileService(fileInfo, login);
+    if(fileService.isFileOpen())
+    {
+        QByteArray data = fileService.prepareCmdData();
+        sendCmd(UPLOAD, data);
+        QByteArray fileBlock = fileService.getFileBlock();
+        while(!isStopped)
+        {
+
+        }
+    }
+    else
+    {
+
+    }*/
+    //for test
+    emit refreshedSignal(isConnected(), userFiles);
 }
 
 void TCPWorker::downloadFile(QString fileName)
@@ -79,40 +83,41 @@ void TCPWorker::downloadFile(QString fileName)
 
 }
 
-void TCPWorker::sendCmd(CMD code, QString data)
-{
-    Command cmd;
-    if(data != NULL)
-    {
-        cmd = Command(code, data);
-        cmd.sendCmd(socket);
-    }
-    else
-    {
-        cmd = Command(code);
-        cmd.sendCmdCode(socket);
-    }
-}
 
 void TCPWorker::gotResp()
 {
     qDebug() << "Something received";
-    Command command;
-    command.getCmdCode(socket, socketStream);
-    if(command.getState() == NO_DATA)
+    Command cmd = transportLayer->getCmd();
+    SerializationLayer cmdSerial;
+    cmdSerial.deserialize(cmd);
+    switch(cmdSerial.getCode())
     {
-        switch(command.getCodeInt())
+        case ACCEPT:
         {
-            case ACCEPT:
+            qDebug() << "Got ACCEPT";
+            currentStatus = LOGGED;
+            emit connectedToSystemSignal(true, userFiles);
+            break;
+        }
+        case CHUNK:
+        {
+            switch(currentStatus)
             {
-                qDebug() << "Got ACCEPT";
-                currentStatus = LOGGED;
-                emit connectedToSystemSignal(true, userFiles);
+                // files list
+                case LOGGED:
+                    break;
+                case DOWNLOAD_FILE_ACTION:
+                    break;
             }
-            default:
-            {
-                break;
-            }
+            break;
+        }
+        case ERROR:
+        {
+            break;
+        }
+        default:
+        {
+            break;
         }
     }
 }
@@ -121,8 +126,10 @@ void TCPWorker::connected()
 {
     qDebug() << "Connected to " << socket->peerAddress().toString();
     currentStatus = CONNECTED;
-    QString loginDataString = login + ":" + password;
-    sendCmd(LOGIN, loginDataString);
+    SerializationLayer loginCmdSerial(LOGIN);
+    loginCmdSerial.serializeData(login, password);
+    Command cmd(loginCmdSerial.getCodeBytes(), loginCmdSerial.getSizeBytes(), loginCmdSerial.getDataBytes());
+    transportLayer->sendCmd(cmd);
 }
 
 void TCPWorker::disconnected()
@@ -133,7 +140,23 @@ void TCPWorker::disconnected()
     emit disconnectedSignal();
 }
 
-/*void TCPWorker::gotError(QAbstractSocket::SocketError error)
+void TCPWorker::gotError(QAbstractSocket::SocketError error)
 {
-
-}*/
+    switch(error)
+    {
+        case QAbstractSocket::RemoteHostClosedError:
+        {
+            qDebug() << "RemoteHostClosedError";
+            isStopped = false;
+            emit disconnect();
+            break;
+        }
+        case QAbstractSocket::NetworkError:
+        {
+            qDebug() << "NetworkError";
+            isStopped = false;
+            emit disconnect();
+            break;
+        }
+    }
+}

@@ -63,7 +63,7 @@ public:
     void refresh();
     void deleteFile(int row);
     void cancel();
-    void uploadFile(QString fileName, qlonglong size, QDateTime lastModified);
+    void uploadFile(QFileInfo fileInfo);
     void downloadFile(QString fileName);
 
 signals:
@@ -72,7 +72,7 @@ signals:
     void refreshSignal();
     void deleteFileSignal(QString fileName);
     void cancelSignal();
-    void uploadFileSignal(QString fileName, qlonglong size, QDateTime lastModified);
+    void uploadFileSignal(QFileInfo fileInfo);
     void downloadFileSignal(QString fileName);
 
     void connectedToSystemSignal(bool connected);

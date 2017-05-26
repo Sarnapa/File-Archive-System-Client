@@ -1,42 +1,52 @@
 #include "Command.h"
 
-Command::Command(QObject *parent) : QObject(parent)
-{
+Command::Command()
+{}
 
+Command::Command(QByteArray &code, QByteArray &size, QByteArray &data)
+{
+    this->code = code;
+    this->size = size;
+    this->data = data;
 }
 
 Command::~Command()
-{
-
-}
-
+{}
 
 // to send
-Command::Command(CMD code, QObject *parent) : QObject(parent)
+/*Command::Command(CMD code, QObject *parent) : QObject(parent)
 {
-    this->code = intToArray((quint8)code);
-}
+    this->code = Converter::intToArray((quint8)code);
+}*/
 
 // to send
-Command::Command(CMD code, QString data, QObject *parent) : QObject(parent)
+/*Command::Command(CMD code, QString data, QObject *parent) : QObject(parent)
 {
-    this->code = intToArray((quint8)code);
-    this->size = intToArray((quint32)data.length());
+    this->code = Converter::intToArray((quint8)code);
+    //this->size = intToArray((quint32)data.length());
     this->data = data.toLocal8Bit();
-}
+    this->size = Converter::intToArray((quint32)data.size());
+}*/
+
+/*Command::Command(CMD code, QByteArray &data, QObject *parent) : QObject(parent)
+{
+    this->code = Converter::intToArray((quint8)code);
+    this->data = data;
+    this->size = Converter::intToArray((quint32)data.size());
+}*/
 
 Command& Command::operator=(const Command &cmd)
 {
     this->code = cmd.code;
-    this->codeInt = cmd.codeInt;
+    //this->codeInt = cmd.codeInt;
     this->size = cmd.size;
-    this->sizeInt = cmd.sizeInt;
+    //this->sizeInt = cmd.sizeInt;
     this->data = cmd.data;
-    this->dataString = cmd.dataString;
+    //this->dataString = cmd.dataString;
     return *this;
 }
 
-CMD Command::getCodeInt()
+/*CMD Command::getCodeInt()
 {
     return (CMD)codeInt;
 }
@@ -49,7 +59,7 @@ quint32 Command::getSizeInt()
 QString Command::getDataString()
 {
     return dataString;
-}
+}*/
 
 QByteArray Command::getCode()
 {
@@ -66,12 +76,32 @@ QByteArray Command::getData()
     return data;
 }
 
-STATE Command::getState()
+/*STATE Command::getState()
 {
     return state;
+}*/
+
+void Command::setCode(QByteArray &code)
+{
+    this->code = code;
 }
 
-void Command::getCmdCode(QTcpSocket *socket, QDataStream &socketStream)
+void Command::setSize(QByteArray &size)
+{
+    this->size = size;
+}
+
+void Command::setData(QByteArray &data)
+{
+    this->data = data;
+}
+
+/*void Command::setState(STATE state)
+{
+    this->state = state;
+}*/
+
+/*void Command::getCmdCode(QTcpSocket *socket, QDataStream &socketStream)
 {
     socketStream.startTransaction();
     if(socket->bytesAvailable() < (int)sizeof(quint8))
@@ -141,12 +171,24 @@ void Command::getCmdData(QTcpSocket *socket, QDataStream &socketStream)
 
 void Command::sendCmd(QTcpSocket *socket)
 {
+    if(sendCmdCode(socket))
+    {
+        if(sendCmdSize(socket))
+        {
+            if(sendCmdData(socket))
+                qDebug() << "sended";
+            else
+                qDebug() << "not send data";
+        }
+        else qDebug("not send size");
+    }
+    else qDebug() << "not send code";
     sendCmdCode(socket);
     sendCmdSize(socket);
     sendCmdData(socket);
-}
+}*/
 
-bool Command::sendCmdCode(QTcpSocket *socket)
+/*bool Command::sendCmdCode(QTcpSocket *socket)
 {
     QDataStream out(&code, QIODevice::WriteOnly);
     out.setByteOrder(QDataStream::BigEndian);
@@ -168,7 +210,7 @@ bool Command::sendCmdData(QTcpSocket *socket)
     out.setByteOrder(QDataStream::BigEndian);
     socket->write(data);
     return socket->waitForBytesWritten(); //socket->flush()
-}
+}*/
 
 /*QByteArray getReversedSize()
 {
@@ -179,6 +221,9 @@ bool Command::sendCmdData(QTcpSocket *socket)
 
 bool Command::needMoreData()
 {
+    QDataStream stream(&code, QIODevice::ReadOnly);
+    quint8 codeInt;
+    stream >> codeInt;
     quint8 needMoreDataCmds [] = {0x01, 0x02, 0x05, 0x06, 0x07, 0x09, 0x0a, 0x0b, 0x33};
     for(unsigned int i = 0; i < 9; ++i)
     {
@@ -188,18 +233,3 @@ bool Command::needMoreData()
     return false;
 }
 
-QByteArray Command::intToArray(quint8 source)
-{
-    QByteArray temp;
-    QDataStream data(&temp, QIODevice::ReadWrite);
-    data << source;
-    return temp;
-}
-
-QByteArray Command::intToArray(quint32 source)
-{
-    QByteArray temp;
-    QDataStream data(&temp, QIODevice::ReadWrite);
-    data << source;
-    return temp;
-}

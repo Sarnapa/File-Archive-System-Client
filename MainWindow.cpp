@@ -128,6 +128,7 @@ void MainWindow::connectedToSystem(bool connected)
 
 void MainWindow::disconnected()
 {
+    actionStatus = false;
     if(connectionStatus)
     {
         connectionStatus = false;
@@ -167,7 +168,7 @@ void MainWindow::uploadFile()
 {
     if(!actionStatus)
     {
-        /*ui->progressBar->setValue(0);
+        ui->progressBar->setValue(0);
         QModelIndex idx = ui->localView->currentIndex();
         if(idx.isValid())
         {
@@ -175,9 +176,9 @@ void MainWindow::uploadFile()
             if(fileInfo.isFile() && !fileInfo.isExecutable())
             {
                 actionStatus = true;
-                remoteModel->uploadFile(fileInfo.fileName(), fileInfo.size(), fileInfo.lastModified());
+                remoteModel->uploadFile(fileInfo);
             }
-        }*/
+        }
     }
 }
 

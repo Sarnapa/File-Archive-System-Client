@@ -8,7 +8,9 @@
 #include <QHostAddress>
 #include <algorithm>
 #include <QDateTime>
-#include "Command.h"
+#include "SerializationLayer.h"
+#include "TransportLayer.h"
+#include "FileService.h"
 
 enum STATUS
 {
@@ -35,7 +37,7 @@ public slots:
     void cancel();
     void refresh();
     void deleteFile(QString fileName);
-    void uploadFile(QString fileName, qlonglong size, QDateTime lastModified);
+    void uploadFile(QFileInfo fileInfo);//(QString fileName, qlonglong size, QDateTime lastModified);
     void downloadFile(QString fileName);
 
 signals:
@@ -48,17 +50,20 @@ signals:
 private:
     QTcpSocket *socket;
     QDataStream socketStream;
+    TransportLayer *transportLayer;
     QString login, password;
     bool isStopped = false;
     STATUS currentStatus = DISCONNECTED;
     QList<QFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
+    /*void sendCmd(CMD code);
     void sendCmd(CMD code, QString data);
+    void sendCmd(CMD code, QByteArray data);*/
 private slots:
     void connected();
     void disconnected();
-    //void gotError(QAbstractSocket::SocketError error);
+    void gotError(QAbstractSocket::SocketError error);
     void gotResp();
 };
 
