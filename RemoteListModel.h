@@ -97,6 +97,7 @@ private:
         this->login = "";
         this->passwd = "";
         this->address = "";
+        filesList->clear();
     }
 
 private slots:
@@ -104,7 +105,7 @@ private slots:
     void disconnected();
     void refreshed(bool connected, QList<QFileInfo> *userList);
     void deletedFile(bool connected, QString fileName);
-    void gotUploadACK(bool connected, QString fileName, qlonglong size, QDateTime lastModified);
+    void gotUploadACK(bool connected, QFileInfo fileInfo, qint64 currentSize);
     void gotDownloadACK(bool connected, QString fileName);
 };
 

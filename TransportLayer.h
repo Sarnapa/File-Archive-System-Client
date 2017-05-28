@@ -11,16 +11,14 @@ public:
     explicit TransportLayer(QObject *parent = 0);
     explicit TransportLayer(QTcpSocket *socket, QObject *parent = 0);
 
-    Command getCmd();
+    QByteArray getCmdCode();
+    QByteArray getCmdSize();
+    QByteArray getCmdData(int size);
 
     void sendCmd(Command& cmd);
 private:
     QTcpSocket *socket;
     QDataStream socketStream;
-
-    QByteArray getCmdCode();
-    QByteArray getCmdSize();
-    QByteArray getCmdData(int size);
 
     bool sendCmdCode(QByteArray code);
     bool sendCmdSize(QByteArray size);

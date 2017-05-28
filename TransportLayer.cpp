@@ -9,26 +9,36 @@ TransportLayer::TransportLayer(QTcpSocket *socket, QObject *parent) : QObject(pa
     this->socket = socket;
 }
 
-Command TransportLayer::getCmd()
+/*Command TransportLayer::getCmd()
 {
     Command cmd;
+    QByteArray code = getCmdCode();
+    if(code.size() == 0)
+    {
+        return Command();
+    }
     cmd.setCode(getCmdCode());
     if(cmd.needMoreData())
     {
-        QByteArray size = getCmdSize();
-        cmd.setSize(size);
-        cmd.setData(getCmdData(size.toInt()));
+        QByteArray sizeArray = getCmdSize();
+        if(sizeArray.size() == 0)
+            return Command();
+        cmd.setSize(sizeArray);
+        QByteArray data = getCmdData(sizeArray.toInt());
+        if(data.size() == 0)
+            return Command();
+        cmd.setData(data);
     }
     return cmd;
-}
+}*/
 
 QByteArray TransportLayer::getCmdCode()
 {
     QByteArray code;
-    if(socket->bytesAvailable() < (int)sizeof(quint8))
+    if(socket->bytesAvailable() != (int)sizeof(quint8))
     {
-        qDebug() << "Got less than one byte.";
-        return NULL;
+        qDebug() << "Required one byte for command code.";
+        return QByteArray();
     }
     code = socket->readAll();
     return code;
@@ -37,10 +47,10 @@ QByteArray TransportLayer::getCmdCode()
 QByteArray TransportLayer::getCmdSize()
 {
     QByteArray size;
-    if(socket->bytesAvailable() < (int)sizeof(quint32))
+    if(socket->bytesAvailable() != (int)sizeof(quint32))
     {
-        qDebug() << "Got less than 4 bytes.";
-        return NULL;
+        qDebug() << "Required 4 bytes for command code.";
+        return QByteArray();
     }
     size = socket->readAll();
     return size;
@@ -49,10 +59,10 @@ QByteArray TransportLayer::getCmdSize()
 QByteArray TransportLayer::getCmdData(int size)
 {
     QByteArray data;
-    if(socket->bytesAvailable() < size)
+    if(socket->bytesAvailable() != size)
     {
-        qDebug() << "Got less than expected bytes.";
-        return NULL;
+        qDebug() << "Expected " + QString(size) + " bytes.";
+        return QByteArray();
     }
     data = socket->readAll();
     return data;
@@ -60,6 +70,7 @@ QByteArray TransportLayer::getCmdData(int size)
 
 void TransportLayer::sendCmd(Command& cmd)
 {
+    qDebug() << "W transportLayer:";
     qDebug() << cmd.getCode().toHex();
     qDebug() << cmd.getSize().toHex();
     qDebug() << QString().fromStdString(cmd.getData().toStdString());

@@ -20,6 +20,7 @@ public:
     static QByteArray intToArray(quint8 source);
     static QByteArray intToArray(quint32 source);
     static QByteArray intToArray(quint64 source);
+
 };
 
 #endif // CONVERTER_H

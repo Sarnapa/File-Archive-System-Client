@@ -1,8 +1,11 @@
 #include "Command.h"
 
 Command::Command()
-{}
+{
+    this->state = WAIT_FOR_CODE;
+}
 
+//to send
 Command::Command(QByteArray &code, QByteArray &size, QByteArray &data)
 {
     this->code = code;
@@ -43,6 +46,7 @@ Command& Command::operator=(const Command &cmd)
     //this->sizeInt = cmd.sizeInt;
     this->data = cmd.data;
     //this->dataString = cmd.dataString;
+    this->state = cmd.state;
     return *this;
 }
 
@@ -76,24 +80,33 @@ QByteArray Command::getData()
     return data;
 }
 
-/*STATE Command::getState()
+STATE Command::getState()
 {
     return state;
-}*/
+}
 
 void Command::setCode(QByteArray &code)
 {
     this->code = code;
+    needMoreData();
 }
 
 void Command::setSize(QByteArray &size)
 {
     this->size = size;
+    if(this->size.size() > 0)
+        this->state = WAIT_FOR_DATA;
+    else
+        this->state = WRONG_CMD;
 }
 
 void Command::setData(QByteArray &data)
 {
     this->data = data;
+    if(data.size() > 0)
+        this->state = GOT_DATA;
+    else
+        this->state = WRONG_CMD;
 }
 
 /*void Command::setState(STATE state)
@@ -219,8 +232,13 @@ bool Command::sendCmdData(QTcpSocket *socket)
     return reversedSize;
 }*/
 
-bool Command::needMoreData()
+void Command::needMoreData()
 {
+    if(code.size() == 0)
+    {
+        this->state = WRONG_CMD;
+        return;
+    }
     QDataStream stream(&code, QIODevice::ReadOnly);
     quint8 codeInt;
     stream >> codeInt;
@@ -228,8 +246,10 @@ bool Command::needMoreData()
     for(unsigned int i = 0; i < 9; ++i)
     {
         if(needMoreDataCmds[i] == codeInt)
-            return true;
+        {
+            this->state = WAIT_FOR_SIZE;
+        }
     }
-    return false;
+    this->state = NO_DATA;
 }
 

@@ -45,15 +45,18 @@ signals:
     void disconnectedSignal();
     void refreshedSignal(bool connected, QList<QFileInfo> *userFiles);
     void deletedFileSignal(bool connected, QString fileName);
-    void gotUploadACKSignal(bool connected, QString fileName, qlonglong size, QDateTime lastModified);
+    void gotUploadACKSignal(bool connected, QFileInfo fileInfo, qint64 currentSize);
     void gotDownloadACKSignal(bool connected, QString fileName);
 private:
     QTcpSocket *socket;
     QDataStream socketStream;
-    TransportLayer *transportLayer;
     QString login, password;
     bool isStopped = false;
     STATUS currentStatus = DISCONNECTED;
+    Command receivedCommand;
+    SerializationLayer cmdSerial;
+    TransportLayer *transportLayer;
+    qint64 currentSize = 0;
     QList<QFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }

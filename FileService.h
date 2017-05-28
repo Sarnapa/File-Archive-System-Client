@@ -18,7 +18,10 @@ public:
     ~FileService();
 
     bool isFileOpen();
-    QByteArray getFileBlock();
+    quint64 getFileSize();
+    QString getFileName();
+    char* getFileBlock(qint64 blockSize = 1024);
+    void fileClose();
 private:
     QFileInfo fileInfo;
     QFile *file;

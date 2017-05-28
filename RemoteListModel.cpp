@@ -12,7 +12,7 @@ RemoteListModel::RemoteListModel(QObject *parent)
     connect(worker, SIGNAL(disconnectedSignal()), this, SLOT(disconnected()));
     connect(worker, SIGNAL(refreshedSignal(bool,QList<QFileInfo>*)), this, SLOT(refreshed(bool,QList<QFileInfo>*)));
     connect(worker, SIGNAL(deletedFileSignal(bool,QString)), this, SLOT(deletedFile(bool,QString)));
-    connect(worker, SIGNAL(gotUploadACKSignal(bool,QString,qlonglong,QDateTime)), this, SLOT(gotUploadACK(bool,QString,qlonglong,QDateTime)));
+    connect(worker, SIGNAL(gotUploadACKSignal(bool,QFileInfo,qint64)), this, SLOT(gotUploadACK(bool,QFileInfo,qint64)));
     connect(worker, SIGNAL(gotDownloadACKSignal(bool,QString)), this, SLOT(gotDownloadACK(bool,QString)));
 
     connect(this, SIGNAL(connectToSystemSignal(QString,QString,QString)), worker, SLOT(connectToSystem(QString,QString,QString)));
@@ -373,13 +373,20 @@ void RemoteListModel::deletedFile(bool connected, QString fileName)
     emit deletedFileSignal(isConnected);
 }
 
-void RemoteListModel::gotUploadACK(bool connected, QString fileName, qlonglong size, QDateTime lastModified)
+void RemoteListModel::gotUploadACK(bool connected, QFileInfo fileInfo, qint64 currentSize)
 {
     isConnected = connected;
     int value = 0;
     if(isConnected)
     {
-
+        value = (currentSize * 100) / fileInfo.size();
+        if(value >= 100)
+        {
+            value = 100;
+            QList<QFileInfo> *newFiles = new QList<QFileInfo>;
+            newFiles->append(fileInfo);
+            insertRows(newFiles, 1);
+        }
     }
     else
     {

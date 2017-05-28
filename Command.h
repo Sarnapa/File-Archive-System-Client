@@ -5,19 +5,36 @@
 #include <QByteArray>
 #include <QDataStream>
 
-enum STATE
+enum OBJECT_CODE
 {
-    NO_DATA = 0,
-    WAIT_FOR_SIZE = 1,
-    WAIT_FOR_DATA = 2,
-    GOT_DATA = 3,
+    NOOP = 0x00,
+    INTRODUCE = 0x01,
+    LOGIN = 0x02,
+    LIS = 0x05,
+    DOWNLOAD = 0x06,
+    UPLOAD = 0x07,
+    ACCEPT = 0x08,
+    CHUNK = 0x09,
+    DELETE = 0x0a,
+    RENAME = 0x0b,
+    COMMIT = 0x0c,
+    ROLLBACK = 0x0d,
+    COMMITRDY = 0x0e,
+    COMMITACK = 0x0f,
+    ERROR = 0x33,
+    EXIT = 0xff,
+    TEST1 = 0x46,
+    TEST2 = 0x47
 };
 
-enum SENDER_OBJECT
+enum STATE
 {
-    CODE = 0,
-    SIZE = 1,
-    DATA = 2
+    WAIT_FOR_CODE = 0,
+    NO_DATA = 1,
+    WAIT_FOR_SIZE = 2,
+    WAIT_FOR_DATA = 3,
+    GOT_DATA = 4,
+    WRONG_CMD = 5
 };
 
 class Command
@@ -32,19 +49,19 @@ public:
     QByteArray getCode();
     QByteArray getSize();
     QByteArray getData();
-    //STATE getState();
+    STATE getState();
     void setCode(QByteArray &code);
     void setSize(QByteArray &size);
     void setData(QByteArray &data);
     //void setState(STATE state);
-
-    bool needMoreData();
 private:
 
     QByteArray code;
     QByteArray size;
     QByteArray data;
-    //STATE state;
+    STATE state;
+
+    void needMoreData();
 };
 
 #endif // COMMAND_H

@@ -132,6 +132,7 @@ void MainWindow::disconnected()
     if(connectionStatus)
     {
         connectionStatus = false;
+
         updateWindow();
     }
     else

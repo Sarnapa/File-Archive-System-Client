@@ -13,7 +13,7 @@ FileService::FileService(QFileInfo &fileInfo, QObject *parent) : QObject(parent)
 
 FileService::~FileService()
 {
-
+    delete file;
 }
 
 //for reading
@@ -22,27 +22,26 @@ bool FileService::isFileOpen()
     return file->open(QIODevice::ReadOnly);
 }
 
-//QByteArray FileService::prepareCmdData()
-//{
-   // QString fileName = fileInfo.fileName();
-    //QByteArray fileSize = Converter::intToBinary((quint64)fileInfo.size());
-    //return fileSize + ":" + fileName + ":";
-    //QByteArray block;
-    //QDataStream out(&block, QIODevice::WriteOnly);
-    /*out.setVersion(QDataStream::Qt_5_9);
-    out.device()->seek(0);*/
-    //block.append(fileSize);
-    //out << (quint64)fileInfo.size(); //<< ':' << fileName << ':' << login << '\0';
-    //block.append(":" + fileName + ":" + login);
-    /*qDebug() << fileSize.size();
-    qDebug() << fileInfo.size();
-    qDebug() << block;
-    qDebug() << sizeof(quint64) << " " << fileName.size() << " " << login.size();
-    qDebug() << block.size();
-    return block;
-}*/
-
-QByteArray FileService::getFileBlock()
+quint64 FileService::getFileSize()
 {
-    return file->readAll();
+    return (quint64)file->size();
+}
+
+QString FileService::getFileName()
+{
+    return fileInfo.fileName();
+}
+
+char* FileService::getFileBlock(qint64 blockSize)
+{
+    char *dataBlock = new char;
+    file->read(dataBlock, blockSize);
+    //qDebug() << "getFileBlock: " << QString(dataBlock) << " " << dataBlock << " " << bytesCount;
+    return dataBlock;
+}
+
+void FileService::fileClose()
+{
+    file->close();
+    qDebug() << "File closed";
 }

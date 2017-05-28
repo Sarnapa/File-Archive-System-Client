@@ -52,7 +52,7 @@ void SerializationLayer::serializeCode()
 
 void SerializationLayer::serializeSize()
 {
-    quint32 size = quint32(dataBytes.size()); // because of '\0' char
+    quint32 size = quint32(dataBytes.size());
     sizeBytes = Converter::intToArray(size); // Converter::intToArray(size);
     //qDebug() << "2: " << size << " " << sizeBytes.toHex();
 }
@@ -78,8 +78,8 @@ void SerializationLayer::serializeData(QString login)
 
 void SerializationLayer::serializeData(quint32 begin, quint32 end, QString fileName, QString login)
 {
-    QByteArray beginBytes = Converter::intToBinary(begin); // Converter::intToArray(begin);
-    QByteArray endBytes = Converter::intToBinary(end); // Converter::intToArray(end);
+    QByteArray beginBytes = Converter::intToArray(begin); // Converter::intToArray(begin);
+    QByteArray endBytes = Converter::intToArray(end); // Converter::intToArray(end);
     //QString s = fileName + ":" + login;
     QByteArray fileNameBytes = fileName.toUtf8();
     QByteArray loginBytes = login.toUtf8();
@@ -93,22 +93,27 @@ void SerializationLayer::serializeData(quint32 begin, quint32 end, QString fileN
     serializeSize();
 }
 
-void SerializationLayer::serializeData(QString fileName, quint64 fileSize, QString login)
+void SerializationLayer::serializeData(quint64 fileSize, QString fileName, QString login)
 {
     QByteArray fileNameBytes = fileName.toUtf8();
-    QByteArray fileSizeBytes = Converter::intToBinary(fileSize); // Converter::intToArray(fileSize);
+    QByteArray fileSizeBytes = Converter::intToArray(fileSize); // Converter::intToArray(fileSize);
     QByteArray loginBytes = login.toUtf8();
+    //QDataStream stream(&dataBytes, QIODevice::WriteOnly);
+    //stream << fileSize;
+    //dataBytes = fileSizeBytes;
+    dataBytes.append(fileSizeBytes);
+    //dataBytes.append(':');
     dataBytes.append(fileNameBytes);
     dataBytes.append(':');
-    dataBytes.append(fileSizeBytes);
-    dataBytes.append(':');
     dataBytes.append(loginBytes);
+    //qDebug() << fileSizeBytes.toHex();
     serializeSize();
 }
 
-void SerializationLayer::serializeData(QByteArray fileData)
+void SerializationLayer::serializeData(char* fileData)
 {
-
+    dataBytes.append(fileData);
+    serializeSize();
 }
 
 void SerializationLayer::serializeData(QString fileName, QString newFileName, QString login)
@@ -120,16 +125,20 @@ void SerializationLayer::serializeData(QString fileName, QString newFileName, QS
 
 void SerializationLayer::deserialize(Command& cmd)
 {
-    deserializeCode(cmd.getCode());
-    if(code != ACCEPT)
+    //QByteArray codeBytes = cmd.getCode();
+    if(codeBytes.size() > 0)
     {
-        deserializeSize(cmd.getSize());
-        if(size != 0)
+        deserializeCode(codeBytes);
+        if(code != ACCEPT)
         {
-            if(code == CHUNK)
-                deserializeChunkCmd(cmd.getData());
-            else if(code == ERROR)
-                deserializeErrorCmd(cmd.getData());
+            deserializeSize(cmd.getSize());
+            if(size != 0)
+            {
+                if(code == CHUNK)
+                    deserializeChunkCmd(cmd.getData());
+                else if(code == ERROR)
+                    deserializeErrorCmd(cmd.getData());
+            }
         }
     }
 }
