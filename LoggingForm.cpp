@@ -9,14 +9,18 @@ LoggingForm::LoggingForm(QWidget *parent) :
     setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
 
     ui->loginLineEdit->setMaxLength(32);
+    ui->loginLineEdit->setText("user1");
     ui->passwordLineEdit->setMaxLength(32);
+    ui->passwordLineEdit->setText("pass1");
     ui->passwordLineEdit->setEchoMode(QLineEdit::Password);
+    ui->addressLineEdit->setText("127.0.0.1");
     QString oIpRange = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
     QRegExp oIpRegex ("^" + oIpRange
                   + "\\." + oIpRange
                   + "\\." + oIpRange
                   + "\\." + oIpRange + "$");
     ui->addressLineEdit->setValidator(new QRegExpValidator(oIpRegex));
+    activateConnectButton();
 
     connect(ui->loginLineEdit,SIGNAL(textChanged(const QString &)) ,this ,SLOT(activateConnectButton()));
     connect(ui->passwordLineEdit,SIGNAL(textChanged(const QString &)) ,this ,SLOT(activateConnectButton()));

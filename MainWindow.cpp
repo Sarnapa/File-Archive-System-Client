@@ -100,6 +100,7 @@ void MainWindow::on_actionDelete_triggered()
 
 void MainWindow::on_actionCancel_triggered()
 {
+    qDebug() << "Cancel w MainWindow";
     if(actionStatus)
     {
         remoteModel->cancel();
@@ -132,7 +133,6 @@ void MainWindow::disconnected()
     if(connectionStatus)
     {
         connectionStatus = false;
-
         updateWindow();
     }
     else
@@ -191,7 +191,7 @@ void MainWindow::gotUploadACK(bool connected, int progressBarValue)
         QMessageBox::warning(this, "Error", "Lost connection to system.");
         updateWindow();
     }
-    if(progressBarValue == 100 || progressBarValue == 0)
+    if(progressBarValue == 100) //|| progressBarValue == 0)
         actionStatus = false;
     emit progressBarValueChanged(progressBarValue);
 }

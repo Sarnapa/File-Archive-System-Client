@@ -1,14 +1,14 @@
 #include "FileService.h"
 
-FileService::FileService(QObject *parent)
+FileService::FileService(QObject *parent): QObject(parent)
 {
 
 }
 
-FileService::FileService(QFileInfo &fileInfo, QObject *parent) : QObject(parent)
+FileService::FileService(QFileInfo fileInfo, QObject *parent) : QObject(parent)
 {
+    //qDebug() << "FILESERVICE: " << QThread::currentThreadId();
     this->fileInfo = fileInfo;
-    this->file = new QFile(fileInfo.absoluteFilePath());
 }
 
 FileService::~FileService()
@@ -16,9 +16,17 @@ FileService::~FileService()
     delete file;
 }
 
+FileService &FileService::operator=(const FileService &fileService)
+{
+    //qDebug() << "PRZYPISANKO: " << QThread::currentThreadId();
+    this->fileInfo = fileService.fileInfo;
+    return *this;
+}
+
 //for reading
 bool FileService::isFileOpen()
 {
+    this->file = new QFile(fileInfo.absoluteFilePath());
     return file->open(QIODevice::ReadOnly);
 }
 
@@ -34,10 +42,22 @@ QString FileService::getFileName()
 
 char* FileService::getFileBlock(qint64 blockSize)
 {
-    char *dataBlock = new char;
-    file->read(dataBlock, blockSize);
-    //qDebug() << "getFileBlock: " << QString(dataBlock) << " " << dataBlock << " " << bytesCount;
+    char *tmp = new char;
+    QDataStream stream(file);
+    qint64 bytesCount = file->read(tmp, blockSize);
+    char *dataBlock = new char[bytesCount];
+    datablock = tmp;
     return dataBlock;
+}
+
+QFileInfo FileService::getFileInfo()
+{
+    return fileInfo;
+}
+
+void FileService::setFileInfo(QFileInfo fileInfo)
+{
+    this->fileInfo = fileInfo;
 }
 
 void FileService::fileClose()

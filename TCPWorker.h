@@ -21,7 +21,8 @@ enum STATUS
     RENAME_ACTION = 4,
     DELETE_FILE_ACTION = 5,
     UPLOAD_FILE_ACTION = 6,
-    DOWNLOAD_FILE_ACTION = 7
+    UPLOADED_FILE = 7,
+    DOWNLOAD_FILE_ACTION = 8
 };
 
 class TCPWorker : public QObject
@@ -56,13 +57,12 @@ private:
     Command receivedCommand;
     SerializationLayer cmdSerial;
     TransportLayer *transportLayer;
+    FileService *fileService;
     qint64 currentSize = 0;
     QList<QFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
-    /*void sendCmd(CMD code);
-    void sendCmd(CMD code, QString data);
-    void sendCmd(CMD code, QByteArray data);*/
+    void sendUploadChunks();
 private slots:
     void connected();
     void disconnected();

@@ -462,6 +462,9 @@ QProgressBar::chunk
    </property>
   </action>
   <action name="actionCancel">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
    <property name="enabled">
     <bool>false</bool>
    </property>
@@ -471,6 +474,9 @@ QProgressBar::chunk
    </property>
    <property name="text">
     <string>&amp;Cancel</string>
+   </property>
+   <property name="priority">
+    <enum>QAction::HighPriority</enum>
    </property>
   </action>
  </widget>

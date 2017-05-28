@@ -21,6 +21,8 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     socketStream.setDevice(socket);
     socketStream.setVersion(QDataStream::Qt_5_9);
     transportLayer = new TransportLayer(socket, this);
+    fileService = new FileService(this);
+    //cmdSerial.setParent(this);
 
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
@@ -59,52 +61,58 @@ void TCPWorker::cancel()
 
 void TCPWorker::uploadFile(QFileInfo fileInfo)//(QString fileName, qlonglong size, QDateTime lastModified)
 {
-    FileService fileService(fileInfo);
-    if(fileService.isFileOpen())
+    fileService->setFileInfo(fileInfo);
+    if(fileService->isFileOpen())
     {
         currentStatus = UPLOAD_FILE_ACTION;
-        qint64 fileSize = fileService.getFileSize();
+        qint64 fileSize = fileService->getFileSize();
         SerializationLayer uploadCmdSerial(UPLOAD);
-        uploadCmdSerial.serializeData((quint64)fileSize, fileService.getFileName(), login);
+        uploadCmdSerial.serializeData((quint64)fileSize, fileService->getFileName(), login);
         Command cmd(uploadCmdSerial.getCodeBytes(), uploadCmdSerial.getSizeBytes(), uploadCmdSerial.getDataBytes());
         transportLayer->sendCmd(cmd);
-        //qint64 bufferSize = socket-;
-        char* fileBlock;
-        SerializationLayer chunkCmdSerial(CHUNK);
-        while(!isStopped && currentSize < fileSize)
-        {
-            if(isConnected())
-            {
-                qDebug() << "UPLOAD: ";
-                fileBlock = fileService.getFileBlock();
-                qDebug() << "FILEBLOCK: " << QString(fileBlock);
-                chunkCmdSerial.serializeData(fileBlock);
-                cmd = Command(chunkCmdSerial.getCodeBytes(), chunkCmdSerial.getSizeBytes(), chunkCmdSerial.getDataBytes());
-                qDebug() << "CMD: " << chunkCmdSerial.getCodeBytes().toHex() << " " << chunkCmdSerial.getSizeBytes().toHex() << " " << chunkCmdSerial.getDataBytes();
-                transportLayer->sendCmd(cmd);
-                currentSize += strlen(fileBlock);
-                qDebug() << "CURRENT_SIZE: " << currentSize;
-            }
-            else
-                isStopped = true;
-            emit gotUploadACKSignal(isConnected(), fileInfo, currentSize);
-        }
+        sendUploadChunks();
     }
     else
     {
         qDebug() << "Cannot open file.";
     }
-    fileService.fileClose();
-    currentStatus = LOGGED;
-    currentSize = 0;
-    isStopped = false;
-    //for test
-    //emit refreshedSignal(isConnected(), userFiles);
 }
 
 void TCPWorker::downloadFile(QString fileName)
 {
 
+}
+
+void TCPWorker::sendUploadChunks()
+{
+    char* fileBlock = NULL;
+    SerializationLayer chunkCmdSerial(CHUNK);
+    qint64 fileSize = fileService->getFileSize();
+    QFileInfo fileInfo = fileService->getFileInfo();
+    unsigned int i = 0;
+    while(!isStopped && currentSize < fileSize)
+    {
+        if(isConnected())
+        {
+            qDebug() << "UPLOAD: " << i;
+            fileBlock = fileService->getFileBlock();
+            qDebug() << "FILEBLOCK: " << QString(fileBlock);
+            chunkCmdSerial.serializeData(fileBlock);
+            Command cmd(chunkCmdSerial.getCodeBytes(), chunkCmdSerial.getSizeBytes(), chunkCmdSerial.getDataBytes());
+            qDebug() << "CMD: " << chunkCmdSerial.getCodeBytes().toHex() << " " << chunkCmdSerial.getSizeBytes().toHex() << " " << chunkCmdSerial.getDataBytes();
+            transportLayer->sendCmd(cmd);
+            currentSize += strlen(fileBlock);
+            qDebug() << "CURRENT_SIZE: " << currentSize;
+        }
+        else
+            isStopped = true;
+        ++i;
+        emit gotUploadACKSignal(isConnected(), fileInfo, currentSize);
+    }
+    fileService->fileClose();
+    currentStatus = LOGGED; // according to doc, should be UPLOADED_FILE - wait for accept
+    currentSize = 0;
+    isStopped = false;
 }
 
 
@@ -123,9 +131,25 @@ void TCPWorker::gotResp()
                 case ACCEPT:
                 {
                     qDebug() << "Got ACCEPT";
-                    currentStatus = LOGGED;
-                    receivedCommand = Command();
-                    emit connectedToSystemSignal(true, userFiles);
+                    switch(currentStatus)
+                    {
+                        case CONNECTED:
+                        {
+                            currentStatus = LOGGED;
+                            receivedCommand = Command();
+                            emit connectedToSystemSignal(true, userFiles);
+                            break;
+                        }
+                        case UPLOAD_FILE_ACTION:
+                        {
+                            sendUploadChunks();
+                            break;
+                        }
+                        case UPLOADED_FILE:
+                        {
+                            break;
+                        }
+                    }
                     break;
                 }
             }

@@ -307,12 +307,14 @@ void RemoteListModel::deleteFile(int row)
 
 void RemoteListModel::cancel()
 {
+    qDebug() << "Cancel w modelu";
     //worker->cancel();
     emit cancelSignal();
 }
 
 void RemoteListModel::uploadFile(QFileInfo fileInfo)
 {
+    //qDebug() << QThread::currentThreadId();
     //worker->uploadFile(fileName, size, lastModified);
     emit uploadFileSignal(fileInfo);
 }
