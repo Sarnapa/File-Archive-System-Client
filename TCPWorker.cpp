@@ -2,7 +2,7 @@
 
 TCPWorker::TCPWorker(QObject *parent) : QObject(parent)
 {
-    userFiles = new QList<QFileInfo>;
+    userFiles = new QList<MyFileInfo>;
 }
 
 TCPWorker::~TCPWorker()
@@ -16,6 +16,7 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     this->login = login;
     this->password = password;
 
+    qRegisterMetaType<MyFileInfo>();
     socket = new QTcpSocket;
     socket->setParent(0);
     socketStream.setDevice(socket);
@@ -45,6 +46,7 @@ void TCPWorker::disconnect()
 
 void TCPWorker::refresh()
 {
+    qRegisterMetaType<MyFileInfo>();
     emit refreshedSignal(isConnected(), userFiles);
 }
 
@@ -62,13 +64,13 @@ void TCPWorker::cancel()
         {
             fileService->fileClose();
             currentStatus = LOGGED;
-            emit gotUploadACKSignal(isConnected(), fileService->getFileInfo(), -1);
+            emit gotUploadACKSignal(isConnected(), MyFileInfo(fileService->getFileInfo()), -1);
             break;
         }
         case WAIT_FOR_UPDATE_ACCEPT:
         {
             currentStatus = LOGGED;
-            emit gotUploadACKSignal(isConnected(), fileService->getFileInfo(), -1);
+            emit gotUploadACKSignal(isConnected(), MyFileInfo(fileService->getFileInfo()), -1);
             break;
         }
         default:
@@ -129,15 +131,18 @@ void TCPWorker::sendUploadChunks()
         else
             isStopped = true;
         ++i;
-        emit gotUploadACKSignal(isConnected(), fileInfo, currentSize);
+        emit gotUploadACKSignal(isConnected(), MyFileInfo(fileInfo), currentSize);
     }
     fileService->fileClose();
     if(!isStopped && currentSize == fileSize)
+    {
+        qDebug() << "File sended to system.";
         currentStatus = WAIT_FOR_UPDATE_ACCEPT;
+    }
     else
     {
         currentStatus = LOGGED;
-        emit gotUploadACKSignal(isConnected(), fileInfo, -1);
+        emit gotUploadACKSignal(isConnected(), MyFileInfo(fileInfo), -1);
     }
     currentSize = 0;
     isStopped = false;
@@ -163,6 +168,7 @@ void TCPWorker::gotResp()
                     {
                         case CONNECTED:
                         {
+                            qRegisterMetaType<MyFileInfo>();
                             currentStatus = LOGGED;
                             receivedCommand = Command();
                             emit connectedToSystemSignal(true, userFiles);
@@ -177,7 +183,7 @@ void TCPWorker::gotResp()
                         {
                             currentStatus = LOGGED;
                             receivedCommand = Command();
-                            emit gotUploadAcceptSignal(isConnected(), fileService->getFileInfo());
+                            emit gotUploadAcceptSignal(isConnected(), MyFileInfo(fileService->getFileInfo()));
                             break;
                         }
                     }
@@ -207,11 +213,11 @@ void TCPWorker::gotResp()
                     {
                         // files list
                         case CONNECTED:
+                            qRegisterMetaType<MyFileInfo>();
                             cmdSerial.deserialize(receivedCommand, true);
                             currentStatus = LOGGED;
-                            //userFiles = getFilesList();
                             receivedCommand = Command();
-                            emit connectedToSystemSignal(true, userFiles);
+                            emit connectedToSystemSignal(true, cmdSerial.getFilesList());
                             break;
                         case DOWNLOAD_FILE_ACTION:
                             cmdSerial.deserialize(receivedCommand, false);
@@ -260,11 +266,6 @@ void TCPWorker::disconnected()
     currentStatus = DISCONNECTED;
     socket->close();
     emit disconnectedSignal();
-}
-
-QList<QFileInfo> *TCPWorker::getFilesList(QByteArray data)
-{
-
 }
 
 void TCPWorker::gotError(QAbstractSocket::SocketError error)

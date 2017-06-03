@@ -38,7 +38,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     // Add data:
-    bool insertRows(QList<QFileInfo> *newFiles, int count);
+    bool insertRows(QList<MyFileInfo> *newFiles, int count);
 
     // Remove data:
     bool removeRow(QString fileName);
@@ -83,7 +83,7 @@ signals:
     void gotUploadAcceptSignal(bool connected, QString fileName);
     void gotDownloadACKSignal(bool connected, int progressBarValue, QString fileName);
 private:
-    QList<QFileInfo> *filesList;
+    QList<MyFileInfo> *filesList;
     QFileIconProvider *iconProvider;
     QString login = "";
     QString passwd = "";
@@ -102,12 +102,12 @@ private:
     }
 
 private slots:
-    void connectedToSystem(bool connected, QList<QFileInfo> *userFiles);
+    void connectedToSystem(bool connected, QList<MyFileInfo> *userFiles);
     void disconnected();
-    void refreshed(bool connected, QList<QFileInfo> *userList);
+    void refreshed(bool connected, QList<MyFileInfo> *userList);
     void deletedFile(bool connected, QString fileName);
-    void gotUploadACK(bool connected, QFileInfo fileInfo, qint64 currentSize);
-    void gotUploadAccept(bool connected, QFileInfo fileInfo);
+    void gotUploadACK(bool connected, MyFileInfo fileInfo, qint64 currentSize);
+    void gotUploadAccept(bool connected, MyFileInfo fileInfo);
     void gotDownloadACK(bool connected, QString fileName);
 };
 

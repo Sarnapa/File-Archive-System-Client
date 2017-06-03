@@ -4,22 +4,29 @@
 #include <QLocale>
 #include <QDateTime>
 #include <QMessageBox>
+#include <QFileInfo>
 
 class MyFileInfo
 {
 public:
     MyFileInfo()
     {}
+    MyFileInfo(QString name, qlonglong size): fileName(name), fileSize(size)
+    {}
     MyFileInfo(QString name, qlonglong size, QDateTime lastModified): fileName(name), fileSize(size), fileLastModified(lastModified)
+    {}
+    MyFileInfo(const MyFileInfo& fileInfo): fileName(fileInfo.fileName), fileSize((qlonglong)fileInfo.fileSize), fileLastModified(fileInfo.fileLastModified)
+    {}
+    MyFileInfo(const QFileInfo& fileInfo): fileName(fileInfo.fileName()), fileSize((qlonglong)fileInfo.size()), fileLastModified(fileInfo.lastModified())
     {}
     ~MyFileInfo()
     {}
 
     MyFileInfo& operator =(const MyFileInfo& file)
     {
-        this->fileName = file.getFileName();
-        this->fileSize = file.getFileSize();
-        this->fileLastModified = file.getFileLastModified();
+        this->fileName = file.fileName;
+        this->fileSize = file.fileSize;
+        this->fileLastModified = file.fileLastModified;
         return *this;
     }
 
@@ -59,5 +66,8 @@ private:
     qlonglong fileSize;
     QDateTime fileLastModified;
 };
+
+Q_DECLARE_METATYPE(MyFileInfo)
+
 
 #endif // MYFILEINFO_H

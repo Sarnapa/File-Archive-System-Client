@@ -39,7 +39,7 @@ quint32 SerializationLayer::getErrorCode()
     return errorCode;
 }
 
-QList<QFileInfo>* SerializationLayer::getFilesList()
+QList<MyFileInfo>* SerializationLayer::getFilesList()
 {
     return filesList;
 }
@@ -176,10 +176,10 @@ void SerializationLayer::deserializeChunkCmd(QByteArray data, bool isFilesChunk)
            fileName = dataString.mid(startPos, endPos - startPos);
            startPos = endPos + 1;
            endPos = dataString.indexOf(';', i);
-           fileSize = dataString.mid(startPos, endPos - startPos);
+           fileSize = (qint64)dataString.mid(startPos, endPos - startPos).toInt();
            startPos = endPos + 1;
-           QFileInfo fileInfo(fileName);
-           filesList->append();
+           MyFileInfo fileInfo(fileName, fileSize);
+           filesList->append(fileInfo);
         }
     }
     else

@@ -43,12 +43,12 @@ public slots:
     void downloadFile(QString fileName);
 
 signals:
-    void connectedToSystemSignal(bool connected, QList<QFileInfo> *userFiles);
+    void connectedToSystemSignal(bool connected, QList<MyFileInfo> *userFiles);
     void disconnectedSignal();
-    void refreshedSignal(bool connected, QList<QFileInfo> *userFiles);
+    void refreshedSignal(bool connected, QList<MyFileInfo> *userFiles);
     void deletedFileSignal(bool connected, QString fileName);
-    void gotUploadACKSignal(bool connected, QFileInfo fileInfo, qint64 currentSize);
-    void gotUploadAcceptSignal(bool connected, QFileInfo fileInfo);
+    void gotUploadACKSignal(bool connected, MyFileInfo fileInfo, qint64 currentSize);
+    void gotUploadAcceptSignal(bool connected, MyFileInfo fileInfo);
     void gotDownloadACKSignal(bool connected, QString fileName);
 private:
     QTcpSocket *socket;
@@ -61,10 +61,9 @@ private:
     TransportLayer *transportLayer;
     FileService *fileService;
     qint64 currentSize = 0;
-    QList<QFileInfo> *userFiles;
+    QList<MyFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
-    QList<QFileInfo>* getFilesList(QByteArray data);
     void sendUploadChunks();
 private slots:
     void connected();

@@ -2,6 +2,7 @@
 #define SERIALIZATIONLAYER_H
 
 #include <QFileInfo>
+#include <MyFileInfo.h>
 #include "Converter.h"
 #include "Command.h"
 
@@ -19,7 +20,7 @@ public:
     OBJECT_CODE getCode();
     quint32 getSize();
     quint32 getErrorCode();
-    QList<QFileInfo>* getFilesList();
+    QList<MyFileInfo>* getFilesList();
 
     void serializeData(QString s1, QString s2); // LOGIN or DELETE
     void serializeData(QString login); // LIST
@@ -39,7 +40,7 @@ private:
     quint32 size;
     //for various command
     quint32 errorCode;
-    QList<QFileInfo>* filesList;
+    QList<MyFileInfo>* filesList;
 
     void serializeCode();
     void serializeSize();

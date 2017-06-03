@@ -9,6 +9,7 @@
 #include <QDataStream>
 #include <QDebug>
 #include "Converter.h"
+#include "MyFileInfo.h"
 
 class FileService : public QObject
 {
