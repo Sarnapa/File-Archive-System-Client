@@ -18,7 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(remoteModel, SIGNAL(refreshedSignal(bool)), this, SLOT(refreshed(bool)));
     connect(remoteModel, SIGNAL(deletedFileSignal(bool)), this, SLOT(deletedFile(bool)));
     connect(ui->uploadButton, SIGNAL(clicked(bool)), this, SLOT(uploadFile()));
-    connect(remoteModel, SIGNAL(gotUploadACKSignal(bool, int)), this, SLOT(gotUploadACK(bool,int)));
+    connect(remoteModel, SIGNAL(gotUploadACKSignal(bool,QString,int)), this, SLOT(gotUploadACK(bool,QString,int)));
+    connect(remoteModel, SIGNAL(gotUploadAcceptSignal(bool,QString)), this, SLOT(gotUploadAccept(bool,QString)));
     connect(ui->downloadButton, SIGNAL(clicked(bool)), this, SLOT(downloadFile()));
     connect(remoteModel, SIGNAL(gotDownloadACKSignal(bool,int,QString)), this, SLOT(gotDownloadACK(bool,int,QString)));
     connect(this, SIGNAL(progressBarValueChanged(int)), ui->progressBar, SLOT(setValue(int)));
@@ -183,7 +184,7 @@ void MainWindow::uploadFile()
     }
 }
 
-void MainWindow::gotUploadACK(bool connected, int progressBarValue)
+void MainWindow::gotUploadACK(bool connected, QString fileName ,int progressBarValue)
 {
     connectionStatus = connected;
     if(connectionStatus == false)
@@ -191,9 +192,29 @@ void MainWindow::gotUploadACK(bool connected, int progressBarValue)
         QMessageBox::warning(this, "Error", "Lost connection to system.");
         updateWindow();
     }
-    if(progressBarValue == 100) //|| progressBarValue == 0)
+
+    if(progressBarValue == -1) // stop
+    {
+        QMessageBox::information(this, "Information", "Stop uploading file " + fileName + ".");
+        progressBarValue = 0;
         actionStatus = false;
+    }
     emit progressBarValueChanged(progressBarValue);
+}
+
+void MainWindow::gotUploadAccept(bool connected, QString fileName)
+{
+    connectionStatus = connected;
+    if(connectionStatus == false)
+    {
+        QMessageBox::warning(this, "Error", "File " + fileName + " refused.");
+        updateWindow();
+    }
+    else
+    {
+        QMessageBox::information(this, "Information", "File " + fileName + " saved.");
+    }
+    actionStatus = false;
 }
 
 void MainWindow::downloadFile()

@@ -20,9 +20,10 @@ enum STATUS
     REFRESH_ACTION = 3,
     RENAME_ACTION = 4,
     DELETE_FILE_ACTION = 5,
-    UPLOAD_FILE_ACTION = 6,
-    UPLOADED_FILE = 7,
-    DOWNLOAD_FILE_ACTION = 8
+    START_UPLOAD_FILE_ACTION = 6,
+    UPLOAD_FILE_ACTION = 7,
+    WAIT_FOR_UPDATE_ACCEPT = 8,
+    DOWNLOAD_FILE_ACTION = 9
 };
 
 class TCPWorker : public QObject
@@ -47,6 +48,7 @@ signals:
     void refreshedSignal(bool connected, QList<QFileInfo> *userFiles);
     void deletedFileSignal(bool connected, QString fileName);
     void gotUploadACKSignal(bool connected, QFileInfo fileInfo, qint64 currentSize);
+    void gotUploadAcceptSignal(bool connected, QFileInfo fileInfo);
     void gotDownloadACKSignal(bool connected, QString fileName);
 private:
     QTcpSocket *socket;
@@ -62,6 +64,7 @@ private:
     QList<QFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
+    QList<QFileInfo>* getFilesList(QByteArray data);
     void sendUploadChunks();
 private slots:
     void connected();

@@ -41,11 +41,8 @@ Command::~Command()
 Command& Command::operator=(const Command &cmd)
 {
     this->code = cmd.code;
-    //this->codeInt = cmd.codeInt;
     this->size = cmd.size;
-    //this->sizeInt = cmd.sizeInt;
     this->data = cmd.data;
-    //this->dataString = cmd.dataString;
     this->state = cmd.state;
     return *this;
 }

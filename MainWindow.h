@@ -50,7 +50,8 @@ private slots:
     void refreshed(bool connected);
     void deletedFile(bool connected);
     void uploadFile();
-    void gotUploadACK(bool connected, int progressBarValue);
+    void gotUploadACK(bool connected, QString fileName, int progressBarValue);
+    void gotUploadAccept(bool connected, QString fileName);
     void downloadFile();
     void gotDownloadACK(bool connected, int progressBarValue, QString fileName);
 

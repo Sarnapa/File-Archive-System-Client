@@ -22,7 +22,7 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     socketStream.setVersion(QDataStream::Qt_5_9);
     transportLayer = new TransportLayer(socket, this);
     fileService = new FileService(this);
-    //cmdSerial.setParent(this);
+    receivedCommand = Command();
 
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
@@ -56,21 +56,41 @@ void TCPWorker::deleteFile(QString fileName)
 void TCPWorker::cancel()
 {
     qDebug("Cancel");
-    isStopped = true;
+    switch(currentStatus)
+    {
+        case START_UPLOAD_FILE_ACTION:
+        {
+            fileService->fileClose();
+            currentStatus = LOGGED;
+            emit gotUploadACKSignal(isConnected(), fileService->getFileInfo(), -1);
+            break;
+        }
+        case WAIT_FOR_UPDATE_ACCEPT:
+        {
+            currentStatus = LOGGED;
+            emit gotUploadACKSignal(isConnected(), fileService->getFileInfo(), -1);
+            break;
+        }
+        default:
+        {
+            isStopped = true;
+            break;
+        }
+    }
+
 }
 
-void TCPWorker::uploadFile(QFileInfo fileInfo)//(QString fileName, qlonglong size, QDateTime lastModified)
+void TCPWorker::uploadFile(QFileInfo fileInfo)
 {
     fileService->setFileInfo(fileInfo);
     if(fileService->isFileOpen())
     {
-        currentStatus = UPLOAD_FILE_ACTION;
+        currentStatus = START_UPLOAD_FILE_ACTION;
         qint64 fileSize = fileService->getFileSize();
         SerializationLayer uploadCmdSerial(UPLOAD);
         uploadCmdSerial.serializeData((quint64)fileSize, fileService->getFileName(), login);
         Command cmd(uploadCmdSerial.getCodeBytes(), uploadCmdSerial.getSizeBytes(), uploadCmdSerial.getDataBytes());
         transportLayer->sendCmd(cmd);
-        sendUploadChunks();
     }
     else
     {
@@ -85,8 +105,9 @@ void TCPWorker::downloadFile(QString fileName)
 
 void TCPWorker::sendUploadChunks()
 {
-    char* fileBlock = NULL;
-    SerializationLayer chunkCmdSerial(CHUNK);
+    qDebug() << "START UPLOAD";
+    currentStatus = UPLOAD_FILE_ACTION;
+    QByteArray fileBlock;
     qint64 fileSize = fileService->getFileSize();
     QFileInfo fileInfo = fileService->getFileInfo();
     unsigned int i = 0;
@@ -94,12 +115,13 @@ void TCPWorker::sendUploadChunks()
     {
         if(isConnected())
         {
+            SerializationLayer chunkCmdSerial(CHUNK);
             qDebug() << "UPLOAD: " << i;
             fileBlock = fileService->getFileBlock();
-            qDebug() << "FILEBLOCK: " << QString(fileBlock);
+            //qDebug() << "FILEBLOCK: " << fileBlock;
             chunkCmdSerial.serializeData(fileBlock);
             Command cmd(chunkCmdSerial.getCodeBytes(), chunkCmdSerial.getSizeBytes(), chunkCmdSerial.getDataBytes());
-            qDebug() << "CMD: " << chunkCmdSerial.getCodeBytes().toHex() << " " << chunkCmdSerial.getSizeBytes().toHex() << " " << chunkCmdSerial.getDataBytes();
+            //qDebug() << "CMD: " << chunkCmdSerial.getCodeBytes().toHex() << " " << chunkCmdSerial.getSizeBytes().toHex() << " " << chunkCmdSerial.getDataBytes();
             transportLayer->sendCmd(cmd);
             currentSize += strlen(fileBlock);
             qDebug() << "CURRENT_SIZE: " << currentSize;
@@ -110,7 +132,13 @@ void TCPWorker::sendUploadChunks()
         emit gotUploadACKSignal(isConnected(), fileInfo, currentSize);
     }
     fileService->fileClose();
-    currentStatus = LOGGED; // according to doc, should be UPLOADED_FILE - wait for accept
+    if(!isStopped && currentSize == fileSize)
+        currentStatus = WAIT_FOR_UPDATE_ACCEPT;
+    else
+    {
+        currentStatus = LOGGED;
+        emit gotUploadACKSignal(isConnected(), fileInfo, -1);
+    }
     currentSize = 0;
     isStopped = false;
 }
@@ -118,7 +146,6 @@ void TCPWorker::sendUploadChunks()
 
 void TCPWorker::gotResp()
 {
-    qDebug() << "Something received";
     STATE stateCmd = receivedCommand.getState();
     switch(stateCmd)
     {
@@ -126,6 +153,7 @@ void TCPWorker::gotResp()
         {
             receivedCommand.setCode(transportLayer->getCmdCode());
             cmdSerial.deserializeCode(receivedCommand.getCode());
+            qDebug() << "Received: " << cmdSerial.getCode();
             switch(cmdSerial.getCode())
             {
                 case ACCEPT:
@@ -140,13 +168,16 @@ void TCPWorker::gotResp()
                             emit connectedToSystemSignal(true, userFiles);
                             break;
                         }
-                        case UPLOAD_FILE_ACTION:
+                        case START_UPLOAD_FILE_ACTION:
                         {
                             sendUploadChunks();
                             break;
                         }
-                        case UPLOADED_FILE:
+                        case WAIT_FOR_UPDATE_ACCEPT:
                         {
+                            currentStatus = LOGGED;
+                            receivedCommand = Command();
+                            emit gotUploadAcceptSignal(isConnected(), fileService->getFileInfo());
                             break;
                         }
                     }
@@ -168,7 +199,6 @@ void TCPWorker::gotResp()
         }
         case GOT_DATA:
         {
-            cmdSerial.deserialize(receivedCommand);
             switch(cmdSerial.getCode())
             {
                 case CHUNK:
@@ -176,15 +206,22 @@ void TCPWorker::gotResp()
                     switch(currentStatus)
                     {
                         // files list
-                        case LOGGED:
+                        case CONNECTED:
+                            cmdSerial.deserialize(receivedCommand, true);
+                            currentStatus = LOGGED;
+                            //userFiles = getFilesList();
+                            receivedCommand = Command();
+                            emit connectedToSystemSignal(true, userFiles);
                             break;
                         case DOWNLOAD_FILE_ACTION:
+                            cmdSerial.deserialize(receivedCommand, false);
                             break;
                     }
                     break;
                 }
                 case ERROR:
                 {
+                    cmdSerial.deserialize(receivedCommand, false);
                     break;
                 }
                 default:
@@ -223,6 +260,11 @@ void TCPWorker::disconnected()
     currentStatus = DISCONNECTED;
     socket->close();
     emit disconnectedSignal();
+}
+
+QList<QFileInfo> *TCPWorker::getFilesList(QByteArray data)
+{
+
 }
 
 void TCPWorker::gotError(QAbstractSocket::SocketError error)

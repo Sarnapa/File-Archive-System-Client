@@ -79,7 +79,8 @@ signals:
     void disconnectedSignal();
     void refreshedSignal(bool connected);
     void deletedFileSignal(bool connected);
-    void gotUploadACKSignal(bool connected, int progressBarValue);
+    void gotUploadACKSignal(bool connected, QString fileName, int progressBarValue);
+    void gotUploadAcceptSignal(bool connected, QString fileName);
     void gotDownloadACKSignal(bool connected, int progressBarValue, QString fileName);
 private:
     QList<QFileInfo> *filesList;
@@ -106,6 +107,7 @@ private slots:
     void refreshed(bool connected, QList<QFileInfo> *userList);
     void deletedFile(bool connected, QString fileName);
     void gotUploadACK(bool connected, QFileInfo fileInfo, qint64 currentSize);
+    void gotUploadAccept(bool connected, QFileInfo fileInfo);
     void gotDownloadACK(bool connected, QString fileName);
 };
 

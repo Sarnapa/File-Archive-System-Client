@@ -13,6 +13,7 @@ RemoteListModel::RemoteListModel(QObject *parent)
     connect(worker, SIGNAL(refreshedSignal(bool,QList<QFileInfo>*)), this, SLOT(refreshed(bool,QList<QFileInfo>*)));
     connect(worker, SIGNAL(deletedFileSignal(bool,QString)), this, SLOT(deletedFile(bool,QString)));
     connect(worker, SIGNAL(gotUploadACKSignal(bool,QFileInfo,qint64)), this, SLOT(gotUploadACK(bool,QFileInfo,qint64)));
+    connect(worker, SIGNAL(gotUploadAcceptSignal(bool,QFileInfo)), this, SLOT(gotUploadAccept(bool,QFileInfo)));
     connect(worker, SIGNAL(gotDownloadACKSignal(bool,QString)), this, SLOT(gotDownloadACK(bool,QString)));
 
     connect(this, SIGNAL(connectToSystemSignal(QString,QString,QString)), worker, SLOT(connectToSystem(QString,QString,QString)));
@@ -381,13 +382,15 @@ void RemoteListModel::gotUploadACK(bool connected, QFileInfo fileInfo, qint64 cu
     int value = 0;
     if(isConnected)
     {
-        value = (currentSize * 100) / fileInfo.size();
-        if(value >= 100)
+        if(currentSize >= 0)
         {
-            value = 100;
-            QList<QFileInfo> *newFiles = new QList<QFileInfo>;
-            newFiles->append(fileInfo);
-            insertRows(newFiles, 1);
+            value = (currentSize * 100) / fileInfo.size();
+            if(value >= 100)
+                value = 100;
+        }
+        else
+        {
+            value = currentSize;
         }
     }
     else
@@ -396,8 +399,27 @@ void RemoteListModel::gotUploadACK(bool connected, QFileInfo fileInfo, qint64 cu
         clearUserData();
         removeAllRows();
     }
-    emit gotUploadACKSignal(isConnected, value);
+    emit gotUploadACKSignal(isConnected, fileInfo.fileName(), value);
 }
+
+void RemoteListModel::gotUploadAccept(bool connected, QFileInfo fileInfo)
+{
+    isConnected = connected;
+    if(isConnected)
+    {
+        QList<QFileInfo> *newFiles = new QList<QFileInfo>;
+        newFiles->append(fileInfo);
+        insertRows(newFiles, 1);
+    }
+    else
+    {
+        workerThread->exit();
+        clearUserData();
+        removeAllRows();
+    }
+    emit gotUploadAcceptSignal(isConnected, fileInfo.fileName());
+}
+
 
 void RemoteListModel::gotDownloadACK(bool connected, QString fileName)
 {

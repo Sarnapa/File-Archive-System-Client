@@ -19,17 +19,17 @@ public:
     OBJECT_CODE getCode();
     quint32 getSize();
     quint32 getErrorCode();
-    QList<QFileInfo> getFilesList();
+    QList<QFileInfo>* getFilesList();
 
     void serializeData(QString s1, QString s2); // LOGIN or DELETE
     void serializeData(QString login); // LIST
     void serializeData(quint32 begin, quint32 end, QString fileName, QString login); // DOWNLOAD
     void serializeData(quint64 fileSize, QString fileName, QString login); //UPLOAD
-    void serializeData(char *fileData); // CHUNK
+    void serializeData(QByteArray fileData); // CHUNK
     void serializeData(QString fileName, QString newFileName, QString login); //RENAME
 
     void deserializeCode(QByteArray code);
-    void deserialize(Command& cmd);
+    void deserialize(Command& cmd, bool isFilesChunk);
 private:
     QByteArray codeBytes;
     QByteArray sizeBytes;
@@ -39,12 +39,12 @@ private:
     quint32 size;
     //for various command
     quint32 errorCode;
-    QList<QFileInfo> filesList;
+    QList<QFileInfo>* filesList;
 
     void serializeCode();
     void serializeSize();
     void deserializeSize(QByteArray size);
-    void deserializeChunkCmd(QByteArray data);
+    void deserializeChunkCmd(QByteArray data, bool isFilesChunk);
     void deserializeErrorCmd(QByteArray data);
 };
 

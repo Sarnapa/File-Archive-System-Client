@@ -39,7 +39,7 @@ quint32 SerializationLayer::getErrorCode()
     return errorCode;
 }
 
-QList<QFileInfo> SerializationLayer::getFilesList()
+QList<QFileInfo>* SerializationLayer::getFilesList()
 {
     return filesList;
 }
@@ -110,7 +110,7 @@ void SerializationLayer::serializeData(quint64 fileSize, QString fileName, QStri
     serializeSize();
 }
 
-void SerializationLayer::serializeData(char* fileData)
+void SerializationLayer::serializeData(QByteArray fileData)
 {
     dataBytes.append(fileData);
     serializeSize();
@@ -123,7 +123,7 @@ void SerializationLayer::serializeData(QString fileName, QString newFileName, QS
     serializeSize();
 }
 
-void SerializationLayer::deserialize(Command& cmd)
+void SerializationLayer::deserialize(Command& cmd, bool isFilesChunk)
 {
     //QByteArray codeBytes = cmd.getCode();
     if(codeBytes.size() > 0)
@@ -135,7 +135,7 @@ void SerializationLayer::deserialize(Command& cmd)
             if(size != 0)
             {
                 if(code == CHUNK)
-                    deserializeChunkCmd(cmd.getData());
+                    deserializeChunkCmd(cmd.getData(), isFilesChunk);
                 else if(code == ERROR)
                     deserializeErrorCmd(cmd.getData());
             }
@@ -157,10 +157,35 @@ void SerializationLayer::deserializeSize(QByteArray size)
     stream >> this->size;
 }
 
-void SerializationLayer::deserializeChunkCmd(QByteArray data)
+void SerializationLayer::deserializeChunkCmd(QByteArray data, bool isFilesChunk)
 {
     //so far
-    dataBytes.append(data);
+    if(isFilesChunk)
+    {
+        QDataStream stream(&data, QIODevice::ReadOnly);
+        QString dataString;
+        stream >> dataString;
+        qint64 fileSize;
+        QString fileName;
+        unsigned int filesCount = dataString.count(';');
+        int startPos = 0;
+        int endPos;
+        for(unsigned int i = 0; i < filesCount; ++i)
+        {
+           endPos = dataString.indexOf(':', i);
+           fileName = dataString.mid(startPos, endPos - startPos);
+           startPos = endPos + 1;
+           endPos = dataString.indexOf(';', i);
+           fileSize = dataString.mid(startPos, endPos - startPos);
+           startPos = endPos + 1;
+           QFileInfo fileInfo(fileName);
+           filesList->append();
+        }
+    }
+    else
+    {
+
+    }
 }
 
 void SerializationLayer::deserializeErrorCmd(QByteArray data)

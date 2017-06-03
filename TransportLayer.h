@@ -20,9 +20,10 @@ private:
     QTcpSocket *socket;
     QDataStream socketStream;
 
-    bool sendCmdCode(QByteArray code);
+    /*bool sendCmdCode(QByteArray code);
     bool sendCmdSize(QByteArray size);
-    bool sendCmdData(QByteArray data);
+    bool sendCmdData(QByteArray data);*/
+    bool sendData(QByteArray data);
 };
 
 #endif // TRANSPORTLAYER_H

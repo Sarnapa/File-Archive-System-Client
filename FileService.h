@@ -23,7 +23,7 @@ public:
     bool isFileOpen();
     quint64 getFileSize();
     QString getFileName();
-    char* getFileBlock(qint64 blockSize = 4096);
+    QByteArray getFileBlock(qint64 blockSize = 4096);
     QFileInfo getFileInfo();
     void setFileInfo(QFileInfo fileInfo);
     void fileClose();

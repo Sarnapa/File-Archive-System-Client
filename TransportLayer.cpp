@@ -70,15 +70,15 @@ QByteArray TransportLayer::getCmdData(int size)
 
 void TransportLayer::sendCmd(Command& cmd)
 {
-    qDebug() << "W transportLayer:";
+    /*qDebug() << "W transportLayer:";
     qDebug() << cmd.getCode().toHex();
     qDebug() << cmd.getSize().toHex();
-    qDebug() << QString().fromStdString(cmd.getData().toStdString());
-    if(sendCmdCode(cmd.getCode()))
+    qDebug() << QString().fromStdString(cmd.getData().toStdString());*/
+    if(sendData(cmd.getCode()))
     {
-        if(sendCmdSize(cmd.getSize()))
+        if(sendData(cmd.getSize()))
         {
-            if(sendCmdData(cmd.getData()))
+            if(sendData(cmd.getData()))
                 qDebug() << "sended";
             else
                 qDebug() << "not send data";
@@ -88,7 +88,7 @@ void TransportLayer::sendCmd(Command& cmd)
     else qDebug() << "not send code";
 }
 
-bool TransportLayer::sendCmdCode(QByteArray code)
+/*bool TransportLayer::sendCmdCode(QByteArray code)
 {
     //QDataStream out(&data, QIODevice::WriteOnly);
     //out.setByteOrder(QDataStream::BigEndian);
@@ -105,6 +105,14 @@ bool TransportLayer::sendCmdSize(QByteArray size)
 }
 
 bool TransportLayer::sendCmdData(QByteArray data)
+{
+    //QDataStream out(&data, QIODevice::WriteOnly);
+    //out.setByteOrder(QDataStream::BigEndian);
+    socket->write(data);
+    return socket->waitForBytesWritten(); //socket->flush()
+}*/
+
+bool TransportLayer::sendData(QByteArray data)
 {
     //QDataStream out(&data, QIODevice::WriteOnly);
     //out.setByteOrder(QDataStream::BigEndian);
