@@ -3,6 +3,7 @@
 
 #include <QFileInfo>
 #include <MyFileInfo.h>
+#include <QTextCodec>
 #include "Converter.h"
 #include "Command.h"
 
@@ -12,6 +13,7 @@ class SerializationLayer : public QObject
 public:
     explicit SerializationLayer(QObject *parent = 0);
     explicit SerializationLayer(OBJECT_CODE code, QObject *parent = 0);
+    ~SerializationLayer();
 
     QByteArray getCodeBytes();
     QByteArray getSizeBytes();
@@ -39,13 +41,14 @@ private:
     OBJECT_CODE code;
     quint32 size;
     //for various command
+    bool isFileChunk = false;
     quint32 errorCode;
     QList<MyFileInfo>* filesList;
 
     void serializeCode();
     void serializeSize();
     void deserializeSize(QByteArray size);
-    void deserializeChunkCmd(QByteArray data, bool isFilesChunk);
+    void deserializeChunkCmd(QByteArray data,bool isFilesChunk);
     void deserializeErrorCmd(QByteArray data);
 };
 

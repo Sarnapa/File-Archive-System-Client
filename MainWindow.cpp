@@ -73,10 +73,7 @@ void MainWindow::on_actionRefresh_triggered()
 {
     if(!actionStatus)
     {
-        //so far - for tests
-        actionStatus = true;
-        ui->progressBar->setValue(0);
-        //setEnabled(false);
+        setEnabled(false);
         remoteModel->refresh();
     }
 }
@@ -145,14 +142,13 @@ void MainWindow::disconnected()
 
 void MainWindow::refreshed(bool connected)
 {
-    actionStatus = false;
     connectionStatus = connected;
     if(connectionStatus == false)
     {
         QMessageBox::warning(this, "Error", "Lost connection to system.");
         updateWindow();
     }
-    //setEnabled(true);
+    setEnabled(true);
 }
 
 void MainWindow::deletedFile(bool connected)

@@ -64,12 +64,15 @@ private:
     QList<MyFileInfo> *userFiles;
 
     inline bool isConnected() { return socket->state() == QTcpSocket::ConnectedState; }
+    void getResp();
+    void gotLoggingResponse();
+    void gotRefreshResponse();
     void sendUploadChunks();
 private slots:
     void connected();
     void disconnected();
     void gotError(QAbstractSocket::SocketError error);
-    void gotResp();
+    //void gotResp();
 };
 
 #endif // TCPWORKER_H

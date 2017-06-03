@@ -2,7 +2,7 @@
 
 Command::Command()
 {
-    this->state = WAIT_FOR_CODE;
+    this->state = WRONG_CMD;
 }
 
 //to send
@@ -245,6 +245,7 @@ void Command::needMoreData()
         if(needMoreDataCmds[i] == codeInt)
         {
             this->state = WAIT_FOR_SIZE;
+            return;
         }
     }
     this->state = NO_DATA;

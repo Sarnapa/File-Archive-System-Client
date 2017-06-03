@@ -15,9 +15,9 @@ public:
     {}
     MyFileInfo(QString name, qlonglong size, QDateTime lastModified): fileName(name), fileSize(size), fileLastModified(lastModified)
     {}
-    MyFileInfo(const MyFileInfo& fileInfo): fileName(fileInfo.fileName), fileSize((qlonglong)fileInfo.fileSize), fileLastModified(fileInfo.fileLastModified)
+    MyFileInfo(const MyFileInfo& fileInfo): fileName(fileInfo.fileName), fileSize((qulonglong)fileInfo.fileSize), fileLastModified(fileInfo.fileLastModified)
     {}
-    MyFileInfo(const QFileInfo& fileInfo): fileName(fileInfo.fileName()), fileSize((qlonglong)fileInfo.size()), fileLastModified(fileInfo.lastModified())
+    MyFileInfo(const QFileInfo& fileInfo): fileName(fileInfo.fileName()), fileSize((qulonglong)fileInfo.size()), fileLastModified(fileInfo.lastModified())
     {}
     ~MyFileInfo()
     {}
@@ -36,7 +36,7 @@ public:
     }
 
     //QVariant supports qlonglong and qulonglong. As the documentation says, these are the same as qint64 and quint64.
-    qlonglong getFileSize() const
+    qulonglong getFileSize() const
     {
         return fileSize;
     }
@@ -63,7 +63,7 @@ public:
 
 private:
     QString fileName;
-    qlonglong fileSize;
+    qulonglong fileSize;
     QDateTime fileLastModified;
 };
 

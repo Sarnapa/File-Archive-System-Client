@@ -10,7 +10,7 @@ enum OBJECT_CODE
     NOOP = 0x00,
     INTRODUCE = 0x01,
     LOGIN = 0x02,
-    LIS = 0x05,
+    LIST = 0x05,
     DOWNLOAD = 0x06,
     UPLOAD = 0x07,
     ACCEPT = 0x08,
@@ -53,7 +53,7 @@ public:
     void setCode(QByteArray &code);
     void setSize(QByteArray &size);
     void setData(QByteArray &data);
-    //void setState(STATE state);
+    void setState(STATE state);
 private:
 
     QByteArray code;

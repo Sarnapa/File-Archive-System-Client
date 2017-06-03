@@ -1,12 +1,20 @@
 #include "SerializationLayer.h"
 
 SerializationLayer::SerializationLayer(QObject *parent) : QObject(parent)
-{}
+{
+    filesList = new QList<MyFileInfo>;
+}
 
 SerializationLayer::SerializationLayer(OBJECT_CODE code, QObject *parent) : QObject(parent)
 {
+    filesList = new QList<MyFileInfo>;
     this->code = code;
     serializeCode();
+}
+
+SerializationLayer::~SerializationLayer()
+{
+    delete filesList;
 }
 
 QByteArray SerializationLayer::getCodeBytes()
@@ -125,17 +133,18 @@ void SerializationLayer::serializeData(QString fileName, QString newFileName, QS
 
 void SerializationLayer::deserialize(Command& cmd, bool isFilesChunk)
 {
-    //QByteArray codeBytes = cmd.getCode();
+    QByteArray codeBytes = cmd.getCode();
     if(codeBytes.size() > 0)
     {
-        deserializeCode(codeBytes);
         if(code != ACCEPT)
         {
             deserializeSize(cmd.getSize());
             if(size != 0)
             {
                 if(code == CHUNK)
+                {
                     deserializeChunkCmd(cmd.getData(), isFilesChunk);
+                }
                 else if(code == ERROR)
                     deserializeErrorCmd(cmd.getData());
             }
@@ -162,21 +171,19 @@ void SerializationLayer::deserializeChunkCmd(QByteArray data, bool isFilesChunk)
     //so far
     if(isFilesChunk)
     {
-        QDataStream stream(&data, QIODevice::ReadOnly);
-        QString dataString;
-        stream >> dataString;
-        qint64 fileSize;
+        QString dataString = QTextCodec::codecForMib(106)->toUnicode(data);
+        quint64 fileSize;
         QString fileName;
         unsigned int filesCount = dataString.count(';');
         int startPos = 0;
         int endPos;
         for(unsigned int i = 0; i < filesCount; ++i)
         {
-           endPos = dataString.indexOf(':', i);
+           endPos = dataString.indexOf(':', startPos);
            fileName = dataString.mid(startPos, endPos - startPos);
            startPos = endPos + 1;
-           endPos = dataString.indexOf(';', i);
-           fileSize = (qint64)dataString.mid(startPos, endPos - startPos).toInt();
+           endPos = dataString.indexOf(';', startPos);
+           fileSize = (quint64)dataString.mid(startPos, endPos - startPos).toInt();
            startPos = endPos + 1;
            MyFileInfo fileInfo(fileName, fileSize);
            filesList->append(fileInfo);
