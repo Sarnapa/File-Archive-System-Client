@@ -5,6 +5,7 @@
 #include <QFileSystemModel>
 #include <QMessageBox>
 #include <QLabel>
+#include <QInputDialog>
 #include "LoggingForm.h"
 #include "RemoteListModel.h"
 
@@ -25,7 +26,6 @@ signals:
 private:
     Ui::MainWindow *ui;
     QLabel *statusLabel;
-
     QFileSystemModel *localModel;
     RemoteListModel *remoteModel;
     LoggingForm *logForm;
@@ -33,9 +33,6 @@ private:
     bool actionStatus = false;
     void updateWindow();
 
-    // for PAIN
-    const QString path = "C:" + QString(QDir::separator()) + "Qt" + QString(QDir::separator()) + "QtProjects" + QString(QDir::separator()) +
-            "FileArchiveSystemClient" + QString(QDir::separator()) + "local" + QString(QDir::separator());
 private slots:
     void on_actionConnect_triggered();
     void on_actionDisconnect_triggered();
@@ -46,10 +43,10 @@ private slots:
 
     void connectToSystem(QString &login, QString &password, QString &address);
     void connectedToSystem(bool connected);
-    void disconnected();
+    void disconnected(DISCONNECT_REASON disconnectReason);
     void refreshed(bool connected);
     void deletedFile(bool connected);
-    //void renamedFIle(bool connected);
+    void renamedFile(bool connected);
     void uploadFile();
     void gotUploadACK(bool connected, QString fileName, int progressBarValue);
     void gotUploadAccept(bool connected, QString fileName);

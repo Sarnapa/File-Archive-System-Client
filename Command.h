@@ -23,8 +23,6 @@ enum OBJECT_CODE
     COMMITACK = 0x0f,
     ERROR = 0x33,
     EXIT = 0xff,
-    TEST1 = 0x46,
-    TEST2 = 0x47
 };
 
 enum STATE
@@ -35,6 +33,12 @@ enum STATE
     WAIT_FOR_DATA = 3,
     GOT_DATA = 4,
     WRONG_CMD = 5
+};
+
+enum ERROR_CODE
+{
+    MISSING_FILE = 0x01,
+    LOGGING_ERROR = 0x192
 };
 
 class Command

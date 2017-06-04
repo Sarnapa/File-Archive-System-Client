@@ -11,12 +11,12 @@ public:
     explicit TransportLayer(QObject *parent = 0);
     explicit TransportLayer(QTcpSocket *socket, QObject *parent = 0);
 
-    Command getCmd(int timeout = 30000);
+    Command getCmd(int timeout = 15000);
     QByteArray getCmdCode();
     QByteArray getCmdSize();
     QByteArray getCmdData(int size);
 
-    void sendCmd(Command& cmd);
+    bool sendCmd(Command& cmd);
 private:
     QTcpSocket *socket;
     QDataStream socketStream;

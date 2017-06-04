@@ -15,6 +15,7 @@ Command TransportLayer::getCmd(int timeout)
     QByteArray code, sizeArray, data;
     Command cmd;
     code = getBytes(timeout, (int)sizeof(quint8));
+    qDebug() << "CODE: " << code.toHex();
     if(code.size() > 0)
     {
         cmd.setCode(code);
@@ -24,6 +25,7 @@ Command TransportLayer::getCmd(int timeout)
     if(cmd.getState() == WAIT_FOR_SIZE)
     {
         sizeArray = getBytes(timeout, (int)sizeof(quint32));
+        qDebug() << "SIZE: " << sizeArray.toHex();
         if(sizeArray.size() > 0)
         {
             cmd.setSize(sizeArray);
@@ -34,7 +36,8 @@ Command TransportLayer::getCmd(int timeout)
         int requiredBytes;
         tmpStream >> requiredBytes;
         data = getBytes(timeout, requiredBytes);
-        if(data.size() > 0)
+        qDebug() << "DATA: " << data << " " << data.size() << " " << requiredBytes;
+        if(data.size() == requiredBytes)
         {
             cmd.setData(data);
         }
@@ -65,32 +68,21 @@ QByteArray TransportLayer::getBytes(int timeout, int requiredBytes)
     return bytes;
 }
 
-void TransportLayer::sendCmd(Command& cmd)
+bool TransportLayer::sendCmd(Command& cmd)
 {
-    /*qDebug() << "W transportLayer:";
-    qDebug() << cmd.getCode().toHex();
-    qDebug() << cmd.getSize().toHex();
-    qDebug() << QString().fromStdString(cmd.getData().toStdString());*/
     if(sendData(cmd.getCode()))
     {
         if(sendData(cmd.getSize()))
         {
-            if(sendData(cmd.getData()))
-            {
-
-            }
-            else
-                qDebug() << "not send data";
+            return sendData(cmd.getData());
         }
-        else qDebug("not send size");
     }
-    else qDebug() << "not send code";
+    return false;
 }
 
 bool TransportLayer::sendData(QByteArray data)
 {
-    //QDataStream out(&data, QIODevice::WriteOnly);
-    //out.setByteOrder(QDataStream::BigEndian);
-    socket->write(data);
-    return socket->waitForBytesWritten(); //socket->flush()
+    qint64 bytesCount = socket->write(data);
+    socket->waitForBytesWritten(); //socket->flush()
+    return bytesCount == data.size();
 }

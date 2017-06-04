@@ -9,17 +9,19 @@ RemoteListModel::RemoteListModel(QObject *parent)
     workerThread = new TCPThread;
     worker->moveToThread(workerThread);
     connect(worker, SIGNAL(connectedToSystemSignal(bool,QList<MyFileInfo>*)), this, SLOT(connectedToSystem(bool,QList<MyFileInfo>*)));
-    connect(worker, SIGNAL(disconnectedSignal()), this, SLOT(disconnected()));
+    connect(worker, SIGNAL(disconnectedSignal(DISCONNECT_REASON)), this, SLOT(disconnected(DISCONNECT_REASON)));
     connect(worker, SIGNAL(refreshedSignal(bool,QList<MyFileInfo>*)), this, SLOT(refreshed(bool,QList<MyFileInfo>*)));
+    connect(worker, SIGNAL(renamedFileSignal(bool,QString,QString)), this, SLOT(renamedFile(bool,QString,QString)));
     connect(worker, SIGNAL(deletedFileSignal(bool,QString)), this, SLOT(deletedFile(bool,QString)));
     connect(worker, SIGNAL(gotUploadACKSignal(bool,MyFileInfo,qint64)), this, SLOT(gotUploadACK(bool,MyFileInfo,qint64)));
     connect(worker, SIGNAL(gotUploadAcceptSignal(bool,MyFileInfo)), this, SLOT(gotUploadAccept(bool,MyFileInfo)));
-    connect(worker, SIGNAL(gotDownloadACKSignal(bool,QString)), this, SLOT(gotDownloadACK(bool,QString)));
+    connect(worker, SIGNAL(gotDownloadACKSignal(bool,MyFileInfo, qint64)), this, SLOT(gotDownloadACK(bool,MyFileInfo, qint64)));
 
     connect(this, SIGNAL(connectToSystemSignal(QString,QString,QString)), worker, SLOT(connectToSystem(QString,QString,QString)));
     connect(this, SIGNAL(disconnectSignal()), worker, SLOT(disconnect()));
     connect(this, SIGNAL(cancelSignal()), worker, SLOT(cancel()), Qt::ConnectionType::DirectConnection);
     connect(this, SIGNAL(refreshSignal()), worker, SLOT(refresh()));
+    connect(this, SIGNAL(renameFileSignal(QString,QString)), worker, SLOT(renameFile(QString,QString)));
     connect(this, SIGNAL(deleteFileSignal(QString)), worker, SLOT(deleteFile(QString)));
     connect(this, SIGNAL(uploadFileSignal(QFileInfo)), worker, SLOT(uploadFile(QFileInfo)));
     connect(this, SIGNAL(downloadFileSignal(MyFileInfo)), worker, SLOT(downloadFile(MyFileInfo)));
@@ -296,6 +298,12 @@ void RemoteListModel::refresh()
     emit refreshSignal();
 }
 
+void RemoteListModel::renameFile(int row, QString newFileName)
+{
+    QString oldFileName = filesList->at(row).getFileName();
+    emit renameFileSignal(oldFileName, newFileName);
+}
+
 void RemoteListModel::deleteFile(int row)
 {
     QString fileName = filesList->at(row).getFileName();
@@ -304,7 +312,6 @@ void RemoteListModel::deleteFile(int row)
 
 void RemoteListModel::cancel()
 {
-    qDebug() << "Cancel w modelu";
     emit cancelSignal();
 }
 
@@ -316,6 +323,7 @@ void RemoteListModel::uploadFile(QFileInfo fileInfo)
 void RemoteListModel::downloadFile(QModelIndex idx)
 {
     MyFileInfo fileInfo = filesList->at(idx.row());
+    qRegisterMetaType<MyFileInfo>();
     emit downloadFileSignal(fileInfo);
 }
 
@@ -323,7 +331,9 @@ void RemoteListModel::connectedToSystem(bool connected, QList<MyFileInfo>* userF
 {
     isConnected = connected;
     if(isConnected)
+    {
         insertRows(userFiles, userFiles->size());
+    }
     else
     {
         workerThread->exit();
@@ -332,13 +342,14 @@ void RemoteListModel::connectedToSystem(bool connected, QList<MyFileInfo>* userF
     emit connectedToSystemSignal(isConnected);
 }
 
-void RemoteListModel::disconnected()
+void RemoteListModel::disconnected(DISCONNECT_REASON disconnectReason)
 {
-    isConnected = false;
     workerThread->exit();
     clearUserData();
     removeAllRows();
-    emit disconnectedSignal();
+    isConnected = false;
+    qRegisterMetaType<DISCONNECT_REASON>();
+    emit disconnectedSignal(disconnectReason);
 }
 
 void RemoteListModel::refreshed(bool connected, QList<MyFileInfo> *userFiles)
@@ -353,6 +364,24 @@ void RemoteListModel::refreshed(bool connected, QList<MyFileInfo> *userFiles)
         removeAllRows();
     }
     emit refreshedSignal(connected);
+}
+
+void RemoteListModel::renamedFile(bool connected, QString oldFileName, QString newFileName)
+{
+    isConnected = connected;
+    if(isConnected)
+    {
+        int row = findFile(oldFileName);
+        MyFileInfo fileInfo = filesList->at(row);
+        fileInfo.setFileName(newFileName);
+    }
+    else
+    {
+        workerThread->exit();
+        clearUserData();
+        removeAllRows();
+    }
+    emit renameFileSignal(isConnected);
 }
 
 void RemoteListModel::deletedFile(bool connected, QString fileName)
@@ -414,13 +443,22 @@ void RemoteListModel::gotUploadAccept(bool connected, MyFileInfo fileInfo)
 }
 
 
-void RemoteListModel::gotDownloadACK(bool connected, QString fileName)
+void RemoteListModel::gotDownloadACK(bool connected, MyFileInfo fileInfo, qint64 currentSize)
 {
     isConnected = connected;
     int value = 0;
     if(isConnected)
     {
-
+        if(currentSize >= 0)
+        {
+            value = (currentSize * 100) / fileInfo.getFileSize();
+            if(value >= 100)
+                value = 100;
+        }
+        else
+        {
+            value = currentSize;
+        }
     }
     else
     {
@@ -428,5 +466,5 @@ void RemoteListModel::gotDownloadACK(bool connected, QString fileName)
         clearUserData();
         removeAllRows();
     }
-    emit gotDownloadACKSignal(isConnected, value, fileName);
+    emit gotDownloadACKSignal(isConnected, value, fileInfo.getFileName());
 }

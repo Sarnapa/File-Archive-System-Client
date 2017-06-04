@@ -42,9 +42,16 @@ quint32 SerializationLayer::getSize()
     return size;
 }
 
-quint32 SerializationLayer::getErrorCode()
+ERROR_CODE SerializationLayer::getErrorCode()
 {
-    return errorCode;
+    return (ERROR_CODE)errorCode;
+}
+
+QByteArray SerializationLayer::getFileChunk()
+{
+    QByteArray tmp(fileChunk);
+    fileChunk = QByteArray();
+    return tmp;
 }
 
 QList<MyFileInfo>* SerializationLayer::getFilesList()
@@ -84,9 +91,7 @@ void SerializationLayer::serializeData(quint32 begin, quint32 end, QString fileN
     QByteArray fileNameBytes = fileName.toUtf8();
     QByteArray loginBytes = login.toUtf8();
     dataBytes.append(beginBytes);
-    dataBytes.append(':');
     dataBytes.append(endBytes);
-    dataBytes.append(':');
     dataBytes.append(fileNameBytes);
     dataBytes.append(':');
     dataBytes.append(loginBytes);
@@ -177,7 +182,7 @@ void SerializationLayer::deserializeChunkCmd(QByteArray data, bool isFilesChunk)
     }
     else
     {
-
+        fileChunk.append(data);
     }
 }
 

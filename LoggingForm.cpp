@@ -13,12 +13,14 @@ LoggingForm::LoggingForm(QWidget *parent) :
     ui->passwordLineEdit->setMaxLength(32);
     ui->passwordLineEdit->setText("pass1");
     ui->passwordLineEdit->setEchoMode(QLineEdit::Password);
-    ui->addressLineEdit->setText("127.0.0.1");
+    ui->addressLineEdit->setText("127.0.0.1:11000");
     QString oIpRange = "(?:[0-1]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
+    QString oPortRange = "(?:[0-9]{1,5})";
     QRegExp oIpRegex ("^" + oIpRange
                   + "\\." + oIpRange
                   + "\\." + oIpRange
-                  + "\\." + oIpRange + "$");
+                  + "\\." + oIpRange +
+                  + "\\:" + oPortRange +  "$");
     ui->addressLineEdit->setValidator(new QRegExpValidator(oIpRegex));
     activateConnectButton();
 

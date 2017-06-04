@@ -61,6 +61,7 @@ public:
     void connectToSystem(QString &login, QString &password, QString &address);
     void disconnect();
     void refresh();
+    void renameFile(int row, QString newFileName);
     void deleteFile(int row);
     void cancel();
     void uploadFile(QFileInfo fileInfo);
@@ -70,14 +71,16 @@ signals:
     void connectToSystemSignal(QString login, QString password, QString address);
     void disconnectSignal();
     void refreshSignal();
+    void renameFileSignal(QString oldFileName, QString newFileName);
     void deleteFileSignal(QString fileName);
     void cancelSignal();
     void uploadFileSignal(QFileInfo fileInfo);
     void downloadFileSignal(MyFileInfo fileInfo);
 
     void connectedToSystemSignal(bool connected);
-    void disconnectedSignal();
+    void disconnectedSignal(DISCONNECT_REASON disconnectReason);
     void refreshedSignal(bool connected);
+    void renameFileSignal(bool connected);
     void deletedFileSignal(bool connected);
     void gotUploadACKSignal(bool connected, QString fileName, int progressBarValue);
     void gotUploadAcceptSignal(bool connected, QString fileName);
@@ -103,12 +106,13 @@ private:
 
 private slots:
     void connectedToSystem(bool connected, QList<MyFileInfo> *userFiles);
-    void disconnected();
+    void disconnected(DISCONNECT_REASON disconnectReason);
     void refreshed(bool connected, QList<MyFileInfo> *userList);
+    void renamedFile(bool connected, QString oldFileName, QString newFileName);
     void deletedFile(bool connected, QString fileName);
     void gotUploadACK(bool connected, MyFileInfo fileInfo, qint64 currentSize);
     void gotUploadAccept(bool connected, MyFileInfo fileInfo);
-    void gotDownloadACK(bool connected, QString fileName);
+    void gotDownloadACK(bool connected, MyFileInfo fileInfo, qint64 currentSize);
 };
 
 #endif // REMOTELISTMODEL_H

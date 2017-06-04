@@ -21,7 +21,8 @@ public:
 
     OBJECT_CODE getCode();
     quint32 getSize();
-    quint32 getErrorCode();
+    ERROR_CODE getErrorCode();
+    QByteArray getFileChunk();
     QList<MyFileInfo>* getFilesList();
 
     void serializeData(QString s1, QString s2); // LOGIN or DELETE
@@ -43,6 +44,7 @@ private:
     //for various command
     bool isFileChunk = false;
     quint32 errorCode;
+    QByteArray fileChunk;
     QList<MyFileInfo>* filesList;
 
     void serializeCode();
