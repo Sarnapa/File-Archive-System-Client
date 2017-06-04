@@ -342,9 +342,9 @@ void TCPWorker::getResp()
         }
         case DOWNLOAD_FILE_ACTION:
         {
+            unsigned int i = 0;
             while(!isStopped && receivedCommand.getState() == WRONG_CMD)
             {
-                unsigned int i = 0;
                 qDebug() << "WRONG_CMD2";
                 receivedCommand = transportLayer->getCmd(20000);
                 ++i;

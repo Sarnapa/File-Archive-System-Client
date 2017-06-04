@@ -187,7 +187,7 @@ bool RemoteListModel::removeRow(QString fileName)
 {
     int filesCount = filesList->size();
 
-    if(!connected() || filesCount < 1)
+    if(filesCount < 1)
         return false;
 
     int idx = findFile(fileName);
@@ -203,7 +203,7 @@ bool RemoteListModel::removeAllRows()
 {
     int filesCount = filesList->size();
 
-    if(!connected() || filesCount < 1)
+    if(filesCount < 1)
         return false;
     beginRemoveRows(QModelIndex(), 0, filesCount - 1);
     filesList->clear();
@@ -344,10 +344,10 @@ void RemoteListModel::connectedToSystem(bool connected, QList<MyFileInfo>* userF
 
 void RemoteListModel::disconnected(DISCONNECT_REASON disconnectReason)
 {
+    isConnected = false;
     workerThread->exit();
     clearUserData();
     removeAllRows();
-    isConnected = false;
     qRegisterMetaType<DISCONNECT_REASON>();
     emit disconnectedSignal(disconnectReason);
 }
@@ -356,7 +356,10 @@ void RemoteListModel::refreshed(bool connected, QList<MyFileInfo> *userFiles)
 {
     isConnected = connected;
     if(isConnected)
+    {
+        userFiles->clear();
         insertRows(userFiles, userFiles->size());
+    }
     else
     {
         workerThread->exit();
@@ -372,8 +375,9 @@ void RemoteListModel::renamedFile(bool connected, QString oldFileName, QString n
     if(isConnected)
     {
         int row = findFile(oldFileName);
-        MyFileInfo fileInfo = filesList->at(row);
+        MyFileInfo fileInfo(filesList->at(row));
         fileInfo.setFileName(newFileName);
+        filesList->replace(row, fileInfo);
     }
     else
     {
