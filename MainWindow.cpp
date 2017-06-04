@@ -34,11 +34,17 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateWindow()
 {
+    setEnabled(true);
     QList<QAction *> &actionsList = ui->mainToolBar->actions();
     for(int i = 0; i < actionsList.size(); ++i)
-        actionsList.at(i)->setEnabled(!actionsList.at(i)->isEnabled());
-    ui->downloadButton->setEnabled(!ui->downloadButton->isEnabled());
-    ui->uploadButton->setEnabled(!ui->uploadButton->isEnabled());
+    {
+        if(actionsList.at(i)->objectName() == "actionConnect")
+            actionsList.at(i)->setEnabled(!connectionStatus);
+        else
+            actionsList.at(i)->setEnabled(connectionStatus);
+    }
+    ui->downloadButton->setEnabled(connectionStatus);
+    ui->uploadButton->setEnabled(connectionStatus);
     if(connectionStatus)
     {
         statusLabel = new QLabel();
@@ -162,6 +168,17 @@ void MainWindow::deletedFile(bool connected)
     setEnabled(true);
 }
 
+/*void MainWindow::renamedFIle(bool connected)
+{
+    connectionStatus = connected;
+    if(connectionStatus == false)
+    {
+        QMessageBox::warning(this, "Error", "Lost connection to system.");
+        updateWindow();
+    }
+    setEnabled(true);
+}*/
+
 void MainWindow::uploadFile()
 {
     if(!actionStatus)
@@ -195,6 +212,12 @@ void MainWindow::gotUploadACK(bool connected, QString fileName ,int progressBarV
         progressBarValue = 0;
         actionStatus = false;
     }
+    else if(progressBarValue == -2) // cannot open file
+    {
+        QMessageBox::information(this, "Information", "Cannot open file " + fileName + " to read.");
+        progressBarValue = 0;
+        actionStatus = false;
+    }
     emit progressBarValueChanged(progressBarValue);
 }
 
@@ -217,13 +240,12 @@ void MainWindow::downloadFile()
 {
     if(!actionStatus)
     {
-        /*ui->progressBar->setValue(0);
         QModelIndex idx = ui->remoteView->currentIndex();
         if(idx.isValid())
         {
             actionStatus = true;
-            remoteModel->downloadFile(remoteModel->fileName(idx));
-        }*/
+            remoteModel->downloadFile(idx);
+        }
     }
 }
 

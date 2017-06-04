@@ -64,7 +64,7 @@ public:
     void deleteFile(int row);
     void cancel();
     void uploadFile(QFileInfo fileInfo);
-    void downloadFile(QString fileName);
+    void downloadFile(QModelIndex idx);
 
 signals:
     void connectToSystemSignal(QString login, QString password, QString address);
@@ -73,7 +73,7 @@ signals:
     void deleteFileSignal(QString fileName);
     void cancelSignal();
     void uploadFileSignal(QFileInfo fileInfo);
-    void downloadFileSignal(QString fileName);
+    void downloadFileSignal(MyFileInfo fileInfo);
 
     void connectedToSystemSignal(bool connected);
     void disconnectedSignal();

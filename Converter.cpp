@@ -1,9 +1,7 @@
 #include "Converter.h"
 
 Converter::Converter(QObject *parent) : QObject(parent)
-{
-
-}
+{}
 
 
 QByteArray Converter::intToBinary(quint8 source)
@@ -33,7 +31,6 @@ QByteArray Converter::intToBinary(quint64 source)
     return byteArray;
 
 }
-
 
 QByteArray Converter::intToArray(quint8 source)
 {

@@ -49,6 +49,7 @@ private slots:
     void disconnected();
     void refreshed(bool connected);
     void deletedFile(bool connected);
+    //void renamedFIle(bool connected);
     void uploadFile();
     void gotUploadACK(bool connected, QString fileName, int progressBarValue);
     void gotUploadAccept(bool connected, QString fileName);

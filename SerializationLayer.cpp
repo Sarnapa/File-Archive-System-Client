@@ -54,15 +54,13 @@ QList<MyFileInfo>* SerializationLayer::getFilesList()
 
 void SerializationLayer::serializeCode()
 {
-    codeBytes = Converter::intToArray((quint8)code); // Converter::intToArray((quint8)code);
-    //qDebug() << "1: " <<  (quint8)code << " " << codeBytes.toHex();
+    codeBytes = Converter::intToArray((quint8)code);
 }
 
 void SerializationLayer::serializeSize()
 {
     quint32 size = quint32(dataBytes.size());
-    sizeBytes = Converter::intToArray(size); // Converter::intToArray(size);
-    //qDebug() << "2: " << size << " " << sizeBytes.toHex();
+    sizeBytes = Converter::intToArray(size);
 }
 
 
@@ -70,11 +68,6 @@ void SerializationLayer::serializeData(QString s1, QString s2)
 {
     QString s = s1 + ":" + s2;
     dataBytes = s.toUtf8();
-    /*QByteArray s1Bytes = s1.toUtf8();
-    QByteArray s2Bytes = s2.toUtf8();
-    dataBytes.append(s1Bytes);
-    dataBytes.append(':');
-    dataBytes.append(s2Bytes);*/
     serializeSize();
 }
 
@@ -86,9 +79,8 @@ void SerializationLayer::serializeData(QString login)
 
 void SerializationLayer::serializeData(quint32 begin, quint32 end, QString fileName, QString login)
 {
-    QByteArray beginBytes = Converter::intToArray(begin); // Converter::intToArray(begin);
-    QByteArray endBytes = Converter::intToArray(end); // Converter::intToArray(end);
-    //QString s = fileName + ":" + login;
+    QByteArray beginBytes = Converter::intToArray(begin);
+    QByteArray endBytes = Converter::intToArray(end);
     QByteArray fileNameBytes = fileName.toUtf8();
     QByteArray loginBytes = login.toUtf8();
     dataBytes.append(beginBytes);
@@ -104,17 +96,12 @@ void SerializationLayer::serializeData(quint32 begin, quint32 end, QString fileN
 void SerializationLayer::serializeData(quint64 fileSize, QString fileName, QString login)
 {
     QByteArray fileNameBytes = fileName.toUtf8();
-    QByteArray fileSizeBytes = Converter::intToArray(fileSize); // Converter::intToArray(fileSize);
+    QByteArray fileSizeBytes = Converter::intToArray(fileSize);
     QByteArray loginBytes = login.toUtf8();
-    //QDataStream stream(&dataBytes, QIODevice::WriteOnly);
-    //stream << fileSize;
-    //dataBytes = fileSizeBytes;
     dataBytes.append(fileSizeBytes);
-    //dataBytes.append(':');
     dataBytes.append(fileNameBytes);
     dataBytes.append(':');
     dataBytes.append(loginBytes);
-    //qDebug() << fileSizeBytes.toHex();
     serializeSize();
 }
 
@@ -168,7 +155,6 @@ void SerializationLayer::deserializeSize(QByteArray size)
 
 void SerializationLayer::deserializeChunkCmd(QByteArray data, bool isFilesChunk)
 {
-    //so far
     if(isFilesChunk)
     {
         QString dataString = QTextCodec::codecForMib(106)->toUnicode(data);

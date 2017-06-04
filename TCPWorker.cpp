@@ -26,7 +26,7 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
     //receivedCommand = Command();
 
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
-    connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()));
+    connect(socket, SIGNAL(disconnected()),this, SLOT(disconnected()), Qt::ConnectionType::DirectConnection);
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(gotError(QAbstractSocket::SocketError)), Qt::ConnectionType::DirectConnection);
     //connect(socket, SIGNAL(readyRead()), this, SLOT(gotResp()));
 
@@ -37,7 +37,6 @@ void TCPWorker::connectToSystem(QString login, QString password, QString address
 
     if(isConnected())
         return;
-
 
     if(!socket->waitForConnected(5000))
         emit connectedToSystemSignal(false, userFiles);
@@ -63,29 +62,45 @@ void TCPWorker::gotRefreshResponse()
     cmdSerial.deserialize(receivedCommand, true);
     qRegisterMetaType<MyFileInfo>();
     currentStatus = LOGGED;
-    emit refreshedSignal(isConnected(), cmdSerial.getFilesList()); //cmdSerial.getFilesList();
+    emit refreshedSignal(isConnected(), cmdSerial.getFilesList());
 }
 
 void TCPWorker::deleteFile(QString fileName)
 {
+    currentStatus = DELETE_FILE_ACTION;
+    currentFileName = fileName;
+    SerializationLayer listRequest(DELETE);
+    listRequest.serializeData(currentFileName, login);
+    Command cmd(listRequest.getCodeBytes(), listRequest.getSizeBytes(), listRequest.getDataBytes());
+    transportLayer->sendCmd(cmd);
+    getResp();
+}
 
+void TCPWorker::gotDeleteResponse()
+{
+    cmdSerial.deserialize(receivedCommand, false);
+    qRegisterMetaType<MyFileInfo>();
+    currentStatus = LOGGED;
+    currentFileName = QString();
+    emit deleteFile(currentFileName);
 }
 
 void TCPWorker::cancel()
 {
-    qDebug("Cancel");
-    /*switch(currentStatus)
+    switch(currentStatus)
     {
         case START_UPLOAD_FILE_ACTION:
         {
             fileService->fileClose();
             currentStatus = LOGGED;
+            isStopped = true;
             emit gotUploadACKSignal(isConnected(), MyFileInfo(fileService->getFileInfo()), -1);
             break;
         }
         case WAIT_FOR_UPDATE_ACCEPT:
         {
             currentStatus = LOGGED;
+            isStopped = true;
             emit gotUploadACKSignal(isConnected(), MyFileInfo(fileService->getFileInfo()), -1);
             break;
         }
@@ -94,8 +109,7 @@ void TCPWorker::cancel()
             isStopped = true;
             break;
         }
-    }*/
-    isStopped = true;
+    }
 }
 
 void TCPWorker::uploadFile(QFileInfo fileInfo)
@@ -114,41 +128,41 @@ void TCPWorker::uploadFile(QFileInfo fileInfo)
     else
     {
         qDebug() << "Cannot open file.";
+        emit gotUploadACKSignal(isConnected(), MyFileInfo(fileService->getFileInfo()), -2);
     }
 }
 
 
-void TCPWorker::downloadFile(QString fileName)
+void TCPWorker::downloadFile(MyFileInfo fileInfo)
 {
-
+    currentStatus = DOWNLOAD_FILE_ACTION;
+    SerializationLayer downloadCmdSerial(DOWNLOAD);
+    downloadCmdSerial.serializeData(0,(quint32)fileInfo.getFileSize(), fileInfo.getFileName(), login);
+    Command cmd(downloadCmdSerial.getCodeBytes(), downloadCmdSerial.getSizeBytes(), downloadCmdSerial.getDataBytes());
+    transportLayer->sendCmd(cmd);
+    getResp();
 }
 
 void TCPWorker::sendUploadChunks()
 {
-    qDebug() << "START UPLOAD";
     currentStatus = UPLOAD_FILE_ACTION;
     QByteArray fileBlock;
     qint64 fileSize = fileService->getFileSize();
     QFileInfo fileInfo = fileService->getFileInfo();
-    unsigned int i = 0;
     while(!isStopped && currentSize < fileSize)
     {
         if(isConnected())
         {
             SerializationLayer chunkCmdSerial(CHUNK);
-            qDebug() << "UPLOAD: " << i;
             fileBlock = fileService->getFileBlock();
-            //qDebug() << "FILEBLOCK: " << fileBlock;
             chunkCmdSerial.serializeData(fileBlock);
             Command cmd(chunkCmdSerial.getCodeBytes(), chunkCmdSerial.getSizeBytes(), chunkCmdSerial.getDataBytes());
-            //qDebug() << "CMD: " << chunkCmdSerial.getCodeBytes().toHex() << " " << chunkCmdSerial.getSizeBytes().toHex() << " " << chunkCmdSerial.getDataBytes();
             transportLayer->sendCmd(cmd);
             currentSize += strlen(fileBlock);
             qDebug() << "CURRENT_SIZE: " << currentSize;
         }
         else
             isStopped = true;
-        ++i;
         emit gotUploadACKSignal(isConnected(), MyFileInfo(fileInfo), currentSize);
     }
     fileService->fileClose();
@@ -163,18 +177,32 @@ void TCPWorker::sendUploadChunks()
     else
     {
         currentStatus = LOGGED;
-        emit gotUploadACKSignal(isConnected(), MyFileInfo(fileInfo), -1);
         currentSize = 0;
         isStopped = false;
+        emit gotUploadACKSignal(isConnected(), MyFileInfo(fileInfo), -1);
     }
 }
 
 void TCPWorker::getResp()
 {
     receivedCommand = transportLayer->getCmd();
+    switch(currentStatus)
+    {
+        case START_UPLOAD_FILE_ACTION:
+        case WAIT_FOR_UPDATE_ACCEPT:
+        {
+            while(!isStopped && receivedCommand.getState() == WRONG_CMD)
+            {
+                qDebug() << "WRONG_CMD";
+                receivedCommand = transportLayer->getCmd();
+            }
+            break;
+        }
+    }
     if(receivedCommand.getState() != WRONG_CMD)
     {
         cmdSerial.deserializeCode(receivedCommand.getCode());
+        qDebug() << "RECEIVED: " << cmdSerial.getCode();
         switch(cmdSerial.getCode())
         {
             case ACCEPT:
@@ -184,6 +212,11 @@ void TCPWorker::getResp()
                     case CONNECTED:
                     {
                         gotLoggingResponse();
+                        break;
+                    }
+                    case DELETE_FILE_ACTION:
+                    {
+                        gotDeleteResponse();
                         break;
                     }
                     case START_UPLOAD_FILE_ACTION:
@@ -236,8 +269,22 @@ void TCPWorker::getResp()
     }
     else
     {
-
+        switch(currentStatus)
+        {
+            case REFRESH_ACTION:
+            {
+                emit disconnect();
+                break;
+            }
+            case DELETE_FILE_ACTION:
+            {
+                currentFileName = QString();
+                emit disconnect();
+                break;
+            }
+        }
     }
+    isStopped = false;
     receivedCommand = Command();
 }
 

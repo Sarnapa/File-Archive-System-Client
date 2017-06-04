@@ -39,8 +39,8 @@ public slots:
     void cancel();
     void refresh();
     void deleteFile(QString fileName);
-    void uploadFile(QFileInfo fileInfo);//(QString fileName, qlonglong size, QDateTime lastModified);
-    void downloadFile(QString fileName);
+    void uploadFile(QFileInfo fileInfo);
+    void downloadFile(MyFileInfo fileInfo);
 
 signals:
     void connectedToSystemSignal(bool connected, QList<MyFileInfo> *userFiles);
@@ -60,6 +60,7 @@ private:
     SerializationLayer cmdSerial;
     TransportLayer *transportLayer;
     FileService *fileService;
+    QString currentFileName;
     qint64 currentSize = 0;
     QList<MyFileInfo> *userFiles;
 
@@ -67,6 +68,7 @@ private:
     void getResp();
     void gotLoggingResponse();
     void gotRefreshResponse();
+    void gotDeleteResponse();
     void sendUploadChunks();
 private slots:
     void connected();

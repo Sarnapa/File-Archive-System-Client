@@ -22,7 +22,7 @@ RemoteListModel::RemoteListModel(QObject *parent)
     connect(this, SIGNAL(refreshSignal()), worker, SLOT(refresh()));
     connect(this, SIGNAL(deleteFileSignal(QString)), worker, SLOT(deleteFile(QString)));
     connect(this, SIGNAL(uploadFileSignal(QFileInfo)), worker, SLOT(uploadFile(QFileInfo)));
-    connect(this, SIGNAL(downloadFileSignal(QString)), worker, SLOT(downloadFile(QString)));
+    connect(this, SIGNAL(downloadFileSignal(MyFileInfo)), worker, SLOT(downloadFile(MyFileInfo)));
 }
 
 RemoteListModel::~RemoteListModel()
@@ -240,13 +240,13 @@ QString RemoteListModel::fileSize(const QModelIndex &index) const
         return QString();
 
     const MyFileInfo &file = filesList->at(index.row());
-    qlonglong bytes = file.getFileSize();
-    if (bytes >= 1000000000)
-        return QLocale().toString(bytes / 1000000000) + QString(" GB");
-    if (bytes >= 1000000)
-        return QLocale().toString(bytes / 1000000) + QString(" MB");
-    if (bytes >= 1000)
-        return QLocale().toString(bytes / 1000) + QString(" KB");
+    qulonglong bytes = file.getFileSize();
+    if (bytes >= 1073741824)
+        return QString::number(bytes / 1073741824.0, 'f', 1) + QString(" GB");
+    if (bytes >= 1048576.0)
+        return QString::number(bytes / 1048576.0, 'f', 1) + QString(" MB");
+    if (bytes >= 1024.0)
+        return QString::number(bytes / 1024.0, 'f', 1) + QString(" KB");
     return QLocale().toString(bytes) + QString(" bytes");
 }
 
@@ -283,47 +283,40 @@ void RemoteListModel::connectToSystem(QString &login, QString &password, QString
     this->passwd = password;
     this->address = address;
     workerThread->start();
-    //worker->connectToSystem(login, password, address);
     emit connectToSystemSignal(login, password, address);
 }
 
 void RemoteListModel::disconnect()
 {
-    //worker->disconnect();
     emit disconnectSignal();
 }
 
 void RemoteListModel::refresh()
 {
-    //worker->refresh();
     emit refreshSignal();
 }
 
 void RemoteListModel::deleteFile(int row)
 {
     QString fileName = filesList->at(row).getFileName();
-    //worker->deleteFile(fileName);
     emit deleteFileSignal(fileName);
 }
 
 void RemoteListModel::cancel()
 {
     qDebug() << "Cancel w modelu";
-    //worker->cancel();
     emit cancelSignal();
 }
 
 void RemoteListModel::uploadFile(QFileInfo fileInfo)
 {
-    //qDebug() << QThread::currentThreadId();
-    //worker->uploadFile(fileName, size, lastModified);
     emit uploadFileSignal(fileInfo);
 }
 
-void RemoteListModel::downloadFile(QString fileName)
+void RemoteListModel::downloadFile(QModelIndex idx)
 {
-    //worker->downloadFile(fileName);
-    emit downloadFileSignal(fileName);
+    MyFileInfo fileInfo = filesList->at(idx.row());
+    emit downloadFileSignal(fileInfo);
 }
 
 void RemoteListModel::connectedToSystem(bool connected, QList<MyFileInfo>* userFiles)

@@ -25,6 +25,7 @@ public:
     quint64 getFileSize();
     QString getFileName();
     QByteArray getFileBlock(qint64 blockSize = 4096);
+    void writeFileBlock(QByteArray block);
     QFileInfo getFileInfo();
     void setFileInfo(QFileInfo fileInfo);
     void fileClose();
