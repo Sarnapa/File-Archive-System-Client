@@ -61,7 +61,10 @@ void TCPWorker::refresh()
     }
     else
     {
-        qDebug() << "sended.";
+        qDebug() << "Sended:";
+        qDebug() << "Code: " << cmd.getCode().toHex();
+        qDebug() << "Size: " << cmd.getSize().toHex();
+        qDebug() << "Data: " << cmd.getData();
         getResp();
     }
 }
@@ -82,6 +85,7 @@ void TCPWorker::renameFile(QString oldFileName, QString newFileName)
     this->newFileName = newFileName;
     renameRequest.serializeData(oldFileName, newFileName, login);
     Command cmd(renameRequest.getCodeBytes(), renameRequest.getSizeBytes(), renameRequest.getDataBytes());
+    qDebug() << "It's time to send...";
     if(!transportLayer->sendCmd(cmd))
     {
         disconnectReason = SEND_ERROR;
@@ -89,7 +93,10 @@ void TCPWorker::renameFile(QString oldFileName, QString newFileName)
     }
     else
     {
-        qDebug() << "sended.";
+        qDebug() << "Sended:";
+        qDebug() << "Code: " << cmd.getCode().toHex();
+        qDebug() << "Size: " << cmd.getSize().toHex();
+        qDebug() << "Data: " << cmd.getData();
         getResp();
     }
 }
@@ -109,6 +116,7 @@ void TCPWorker::deleteFile(QString fileName)
     SerializationLayer listRequest(DELETE);
     listRequest.serializeData(currentFileName, login);
     Command cmd(listRequest.getCodeBytes(), listRequest.getSizeBytes(), listRequest.getDataBytes());
+    qDebug() << "It's time to send...";
     if(!transportLayer->sendCmd(cmd))
     {
         disconnectReason = SEND_ERROR;
@@ -116,7 +124,10 @@ void TCPWorker::deleteFile(QString fileName)
     }
     else
     {
-        qDebug() << "sended.";
+        qDebug() << "Sended:";
+        qDebug() << "Code: " << cmd.getCode().toHex();
+        qDebug() << "Size: " << cmd.getSize().toHex();
+        qDebug() << "Data: " << cmd.getData();
         getResp();
     }
 }
@@ -124,7 +135,7 @@ void TCPWorker::deleteFile(QString fileName)
 void TCPWorker::gotDeleteResponse()
 {
     currentStatus = LOGGED;
-    emit deleteFile(currentFileName);
+    emit deletedFileSignal(isConnected(), currentFileName);
     currentFileName = QString();
 }
 
@@ -145,6 +156,12 @@ void TCPWorker::cancel()
             emit gotUploadACKSignal(isConnected(), MyFileInfo(fileService->getFileInfo()), -1);
             break;
         }
+        case DOWNLOAD_FILE_ACTION:
+        {
+            isStopped = true;
+            emit gotDownloadACKSignal(isConnected(), fileService->getMyFileInfo(), -1);
+            break;
+        }
         default:
         {
             isStopped = true;
@@ -163,6 +180,7 @@ void TCPWorker::uploadFile(QFileInfo fileInfo)
         SerializationLayer uploadCmdSerial(UPLOAD);
         uploadCmdSerial.serializeData((quint64)fileSize, fileService->getFileName(), login);
         Command cmd(uploadCmdSerial.getCodeBytes(), uploadCmdSerial.getSizeBytes(), uploadCmdSerial.getDataBytes());
+        qDebug() << "It's time to send...";
         if(!transportLayer->sendCmd(cmd))
         {
             fileService->fileClose();
@@ -171,7 +189,10 @@ void TCPWorker::uploadFile(QFileInfo fileInfo)
         }
         else
         {
-            qDebug() << "sended.";
+            qDebug() << "Sended:";
+            qDebug() << "Code: " << cmd.getCode().toHex();
+            qDebug() << "Size: " << cmd.getSize().toHex();
+            qDebug() << "Data: " << cmd.getData();
             getResp();
         }
     }
@@ -192,9 +213,7 @@ void TCPWorker::downloadFile(MyFileInfo fileInfo)
         SerializationLayer downloadCmdSerial(DOWNLOAD);
         downloadCmdSerial.serializeData(0,(quint32)fileInfo.getFileSize(), fileInfo.getFileName(), login);
         Command cmd(downloadCmdSerial.getCodeBytes(), downloadCmdSerial.getSizeBytes(), downloadCmdSerial.getDataBytes());
-        qDebug() << "DF CODE: " << cmd.getCode().toHex();
-        qDebug() << "DF SIZE: " << cmd.getSize().toHex();
-        qDebug() << "DF DATA: " << cmd.getData();
+        qDebug() << "It's time to send...";
         if(!transportLayer->sendCmd(cmd))
         {
             fileService->fileClose();
@@ -203,7 +222,10 @@ void TCPWorker::downloadFile(MyFileInfo fileInfo)
         }
         else
         {
-            qDebug() << "sended.";
+            qDebug() << "Sended:";
+            qDebug() << "Code: " << cmd.getCode().toHex();
+            qDebug() << "Size: " << cmd.getSize().toHex();
+            qDebug() << "Data: " << cmd.getData();
             getResp();
         }
     }
@@ -214,10 +236,74 @@ void TCPWorker::downloadFile(MyFileInfo fileInfo)
     }
 }
 
-void TCPWorker::gotFileChunk()
+/*void TCPWorker::gotFileChunk()
 {
     QByteArray fileBlock;
     qint64 fileSize = fileService->getFileSize();
+    MyFileInfo fileInfo = fileService->getMyFileInfo();
+    qDebug() << "PRZED PETLA: " << currentSize << " " << fileSize;
+    while(!isStopped && currentSize < fileSize)
+    {
+        cmdSerial.deserialize(receivedCommand, false);
+        fileBlock = cmdSerial.getFileChunk();
+        fileService->writeFileBlock(fileBlock);
+        currentSize += strlen(fileBlock);
+        qDebug() << "CURRENT_SIZE: " << currentSize;
+        if(currentSize == fileSize)
+        {
+            qDebug() << "File saved.";
+            fileService->fileClose();
+            emit gotDownloadACKSignal(isConnected(), fileInfo, currentSize);
+            currentStatus = LOGGED;
+            currentSize = 0;
+            isStopped = false;
+            break;
+        }
+        else
+        {
+            emit gotDownloadACKSignal(isConnected(), fileInfo, currentSize);
+        }
+        receivedCommand = Command();
+        if(isConnected())
+        {
+            while(!isStopped && receivedCommand.getState() == WRONG_CMD)
+            {
+                qDebug() << "WRONG_CMD during downloading2";
+                if(!isConnected())
+                    break;
+                receivedCommand = transportLayer->getCmd(1000, 2000, 4000);
+            }
+            transportLayer->clear();
+        }
+        else
+        {
+            qDebug() << "File not saved.";
+            fileService->fileClose();
+            currentStatus = DISCONNECTED;
+            currentSize = 0;
+            isStopped = false;
+            emit gotDownloadACKSignal(isConnected(), fileInfo, -1);
+            break;
+        }
+    }
+    if(receivedCommand.getState() == WRONG_CMD) //interrupt
+    {
+        qDebug() << "File not saved.";
+        fileService->fileClose();
+        if(isConnected())
+            currentStatus = LOGGED;
+        else
+            currentStatus = DISCONNECTED;
+        currentSize = 0;
+        isStopped = false;
+        emit gotDownloadACKSignal(isConnected(), fileInfo, -1);
+    }
+}*/
+
+void TCPWorker::gotFileChunk()
+{
+    QByteArray fileBlock;
+    qint64 fileSize = fileService->getMyFileInfo().getFileSize();
     MyFileInfo fileInfo = fileService->getMyFileInfo();
     if(!isStopped)
     {
@@ -225,11 +311,9 @@ void TCPWorker::gotFileChunk()
         {
             cmdSerial.deserialize(receivedCommand, false);
             fileBlock = cmdSerial.getFileChunk();
-            qDebug() << "FILE_BLOCK_SIZE" << fileBlock.size();
-            qDebug() << "FILE_BLOCK: " << fileBlock;
             fileService->writeFileBlock(fileBlock);
             currentSize += strlen(fileBlock);
-            qDebug() << "CURRENT_SIZE: " << currentSize;
+            qDebug() << "CURRENT_SIZE: " << currentSize << " " << fileSize;
             if(currentSize == fileSize)
             {
                 qDebug() << "File saved.";
@@ -261,7 +345,7 @@ void TCPWorker::gotFileChunk()
         currentStatus = LOGGED;
         currentSize = 0;
         isStopped = false;
-        emit gotDownloadACKSignal(isConnected(), fileInfo, -1);
+        //emit gotDownloadACKSignal(isConnected(), fileInfo, -1);
     }
 }
 
@@ -280,10 +364,15 @@ void TCPWorker::sendUploadChunks()
             fileBlock = fileService->getFileBlock();
             chunkCmdSerial.serializeData(fileBlock);
             Command cmd(chunkCmdSerial.getCodeBytes(), chunkCmdSerial.getSizeBytes(), chunkCmdSerial.getDataBytes());
+            qDebug() << "It's time to send...";
             while(!isStopped)
             {
                 if(transportLayer->sendCmd(cmd))
                 {
+                    qDebug() << "Sended:";
+                    qDebug() << "Code: " << cmd.getCode().toHex();
+                    qDebug() << "Size: " << cmd.getSize().toHex();
+                    qDebug() << "Data: " << cmd.getData();
                     sended = true;
                     break;
                 }
@@ -314,7 +403,6 @@ void TCPWorker::sendUploadChunks()
         currentStatus = WAIT_FOR_UPDATE_ACCEPT;
         currentSize = 0;
         isStopped = false;
-        qDebug() << "sended.";
         getResp();
     }
     else
@@ -335,22 +423,23 @@ void TCPWorker::getResp()
         {
             while(!isStopped && receivedCommand.getState() == WRONG_CMD)
             {
-                qDebug() << "WRONG_CMD1";
+                qDebug() << "WRONG_CMD received, waiting on ACCEPT";
+                if(!isConnected())
+                    break;
                 receivedCommand = transportLayer->getCmd(1000);
             }
             break;
         }
         case DOWNLOAD_FILE_ACTION:
         {
-            unsigned int i = 0;
             while(!isStopped && receivedCommand.getState() == WRONG_CMD)
             {
-                qDebug() << "WRONG_CMD2";
-                receivedCommand = transportLayer->getCmd(20000);
-                ++i;
-                if(i == 5)
+                qDebug() << "WRONG_CMD during downloading";
+                if(!isConnected())
                     break;
+                receivedCommand = transportLayer->getCmd(1000, 2000, 4000);
             }
+            transportLayer->clear();
             break;
         }
         default:
@@ -362,7 +451,6 @@ void TCPWorker::getResp()
     if(receivedCommand.getState() != WRONG_CMD)
     {
         cmdSerial.deserializeCode(receivedCommand.getCode());
-        qDebug() << "RECEIVED: " << cmdSerial.getCode();
         switch(cmdSerial.getCode())
         {
             case ACCEPT:
@@ -386,13 +474,12 @@ void TCPWorker::getResp()
                     }
                     case START_UPLOAD_FILE_ACTION:
                     {
-                        qDebug() << "START_FOR_UPDATE_ACCEPT";
+                        receivedCommand = Command();
                         sendUploadChunks();
                         break;
                     }
                     case WAIT_FOR_UPDATE_ACCEPT:
                     {
-                        qDebug() << "WAIT_FOR_UPDATE_ACCEPT";
                         currentStatus = LOGGED;
                         qRegisterMetaType<MyFileInfo>();
                         emit gotUploadAcceptSignal(isConnected(), MyFileInfo(fileService->getFileInfo()));
@@ -418,6 +505,11 @@ void TCPWorker::getResp()
                     case DOWNLOAD_FILE_ACTION:
                     {
                         gotFileChunk();
+                        receivedCommand = Command();
+                        if(currentStatus == DOWNLOAD_FILE_ACTION)
+                        {
+                            getResp();
+                        }
                         break;
                     }
                 }
@@ -468,10 +560,22 @@ void TCPWorker::getResp()
                 break;
             }
             case DOWNLOAD_FILE_ACTION:
+            {
+                currentSize = 0;
+                fileService->fileClose();
+                if(isConnected())
+                    currentStatus = LOGGED;
+                else
+                    currentStatus = DISCONNECTED;
+                break;
+            }
             case START_UPLOAD_FILE_ACTION:
             case WAIT_FOR_UPDATE_ACCEPT:
             {
-                currentStatus = LOGGED;
+                if(isConnected())
+                    currentStatus = LOGGED;
+                else
+                    currentStatus = DISCONNECTED;
                 break;
             }
         }
@@ -536,6 +640,7 @@ void TCPWorker::gotLoggingResponse()
     SerializationLayer listRequest(LIST);
     listRequest.serializeData(login);
     Command cmd(listRequest.getCodeBytes(), listRequest.getSizeBytes(), listRequest.getDataBytes());
+    qDebug() << "It's time to send...";
     if(!transportLayer->sendCmd(cmd))
     {
         disconnectReason = SEND_ERROR;
@@ -543,7 +648,10 @@ void TCPWorker::gotLoggingResponse()
     }
     else
     {
-        qDebug() << "sended.";
+        qDebug() << "Sended:";
+        qDebug() << "Code: " << cmd.getCode().toHex();
+        qDebug() << "Size: " << cmd.getSize().toHex();
+        qDebug() << "Data: " << cmd.getData();
         getResp();
     }
 }
@@ -575,7 +683,6 @@ void TCPWorker::gotError(QAbstractSocket::SocketError error)
             qDebug() << "RemoteHostClosedError";
             if(currentStatus != CONNECTED)
             {
-                isStopped = true;
                 disconnectReason = REMOTE_HOST_CLOSED_ERROR;
                 emit disconnect();
             }

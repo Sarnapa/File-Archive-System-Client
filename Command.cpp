@@ -74,7 +74,7 @@ void Command::setData(QByteArray &data)
 
 void Command::needMoreData()
 {
-    if(code.size() == 0)
+    if(code.size() != (int)sizeof(quint8))
     {
         this->state = WRONG_CMD;
         return;

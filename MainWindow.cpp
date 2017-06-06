@@ -94,10 +94,17 @@ void MainWindow::on_actionRename_triggered()
         {
             bool ok;
             QString newFileName = QInputDialog::getText(this, "Client App", "New filename:", QLineEdit::Normal, remoteModel->fileName(idx), &ok);
-            if(ok && !newFileName.isEmpty())
+            if(newFileName.length() > 255)
             {
-                setEnabled(false);
-                remoteModel->renameFile(idx.row(), newFileName);
+                QMessageBox::warning(this, "Error", "Filename too long.");
+            }
+            else
+            {
+                if(ok && !newFileName.isEmpty())
+                {
+                    setEnabled(false);
+                    remoteModel->renameFile(idx.row(), newFileName);
+                }
             }
         }
     }
@@ -233,6 +240,7 @@ void MainWindow::refreshed(bool connected)
         updateWindow();
     }
     setEnabled(true);
+    ui->localView->repaint();
 }
 
 void MainWindow::deletedFile(bool connected)

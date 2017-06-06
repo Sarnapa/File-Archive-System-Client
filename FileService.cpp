@@ -60,10 +60,8 @@ QByteArray FileService::getFileBlock(qint64 blockSize)
 
 void FileService::writeFileBlock(QByteArray block)
 {
-    //qDebug() << "BYTES_COUNT1: " << block.size();
-    qint64 bytesCount = file->write(block);
+    file->write(block);
     file->flush();
-    //qDebug() << "BYTES_COUNT2: " << bytesCount << " " << file->size();
 }
 
 QFileInfo FileService::getFileInfo()
@@ -89,5 +87,4 @@ void FileService::setMyFileInfo(MyFileInfo myFileInfo)
 void FileService::fileClose()
 {
     file->close();
-    qDebug() << "File closed";
 }
