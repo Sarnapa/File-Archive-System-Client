@@ -86,5 +86,8 @@ void FileService::setMyFileInfo(MyFileInfo myFileInfo)
 
 void FileService::fileClose()
 {
-    file->close();
+    if(file->isOpen())
+    {
+        file->close();
+    }
 }

@@ -66,7 +66,7 @@ void SerializationLayer::serializeCode()
 
 void SerializationLayer::serializeSize()
 {
-    quint32 size = quint32(dataBytes.size());
+    quint32 size = (quint32)dataBytes.size();
     sizeBytes = Converter::intToArray(size);
 }
 
@@ -90,10 +90,12 @@ void SerializationLayer::serializeData(quint32 begin, quint32 end, QString fileN
     QByteArray endBytes = Converter::intToArray(end);
     QByteArray fileNameBytes = fileName.toUtf8();
     QByteArray loginBytes = login.toUtf8();
+    QString separator = ":";
+    QByteArray separatorBytes = separator.toUtf8();
     dataBytes.append(beginBytes);
     dataBytes.append(endBytes);
     dataBytes.append(fileNameBytes);
-    dataBytes.append(':');
+    dataBytes.append(separatorBytes);
     dataBytes.append(loginBytes);
     serializeSize();
 }
@@ -103,9 +105,11 @@ void SerializationLayer::serializeData(quint64 fileSize, QString fileName, QStri
     QByteArray fileNameBytes = fileName.toUtf8();
     QByteArray fileSizeBytes = Converter::intToArray(fileSize);
     QByteArray loginBytes = login.toUtf8();
+    QString separator = ":";
+    QByteArray separatorBytes = separator.toUtf8();
     dataBytes.append(fileSizeBytes);
     dataBytes.append(fileNameBytes);
-    dataBytes.append(':');
+    dataBytes.append(separatorBytes);
     dataBytes.append(loginBytes);
     serializeSize();
 }
@@ -118,8 +122,16 @@ void SerializationLayer::serializeData(QByteArray fileData)
 
 void SerializationLayer::serializeData(QString fileName, QString newFileName, QString login)
 {
-    QString s = fileName + ":" + newFileName + ":" + login;
-    dataBytes = s.toUtf8();
+    QByteArray fileNameBytes = fileName.toUtf8();
+    QByteArray newFileNameBytes = newFileName.toUtf8();
+    QByteArray loginBytes = login.toUtf8();
+    QString separator = ":";
+    QByteArray separatorBytes = separator.toUtf8();
+    dataBytes.append(fileNameBytes);
+    dataBytes.append(separatorBytes);
+    dataBytes.append(newFileNameBytes);
+    dataBytes.append(separatorBytes);
+    dataBytes.append(loginBytes);
     serializeSize();
 }
 

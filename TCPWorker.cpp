@@ -292,6 +292,7 @@ void TCPWorker::sendUploadChunks()
     bool sended = false;
     qint64 fileSize = fileService->getFileSize();
     QFileInfo fileInfo = fileService->getFileInfo();
+    unsigned int i = 0;
     while(!isStopped && currentSize < fileSize)
     {
         if(isConnected())
@@ -308,7 +309,7 @@ void TCPWorker::sendUploadChunks()
                     qDebug() << "Sended:";
                     qDebug() << "Code: " << cmd.getCode().toHex();
                     qDebug() << "Size: " << cmd.getSize().toHex();
-                    qDebug() << "Data: " << cmd.getData();
+                    qDebug() << "Data: " << cmd.getData() << " " << cmd.getData().size();
                     sended = true;
                     break;
                 }
@@ -324,8 +325,9 @@ void TCPWorker::sendUploadChunks()
             }
             else
             {
+                i++;
                 currentSize += strlen(fileBlock);
-                qDebug() << "CURRENT_SIZE: " << currentSize;
+                qDebug() << i << " CURRENT_SIZE: " << currentSize;
             }
         }
         else
